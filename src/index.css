@@ -30,7 +30,6 @@ body {
   background-image: url("/path/to/image.jpg");
   background-size: cover;
   background-position: center;
-  filter: hue-rotate(180deg); /* 色相を回転させる */
   margin: 0;
   display: flex;
   place-items: center;
