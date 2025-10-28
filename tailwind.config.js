@@ -19,6 +19,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['"Noto Sans JP"', 'sans-serif'],
+        katari: ['"Shippori Mincho"', 'serif'],
+      },
       colors: {
         debug: '#ff00ff',
       },

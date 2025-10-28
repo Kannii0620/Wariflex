@@ -8,11 +8,12 @@ export default function AddPayment() {
         均等割り勘モード
       </label>
       <div className="mb-2">
-        <label className="block text-sm mb-1">支払い1</label>
+        <label className="block text-sm mb-1">支払い1{/*ここに％または金額を計算して表示*/}</label>
         <input type="range" className="w-full" />
         <select className="w-full border p-2 rounded mt-2">
-          <option>俺が多めに</option>
-          <option>田中さんが多めに</option>
+          <option>均等割</option>
+          <option>思いやり割</option>
+          <option>男気割</option>
         </select>
       </div>
       <button className="bg-purple-500 text-white px-4 py-2 rounded mt-2">支払いを追加する</button>
