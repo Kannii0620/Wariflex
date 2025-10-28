@@ -1,4 +1,5 @@
-export default {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   darkMode: 'media', // または 'class'
   content: [
     "./index.html",
@@ -12,13 +13,16 @@ export default {
     'text-purple-600',
     'bg-yellow-100',
     'border-yellow-400',
+    {
+      pattern: /bg-\[url\(.*\)\]/, // 動的背景画像を守る
+    },
   ],
   theme: {
-  extend: {
-    colors: {
-      debug: '#ff00ff',
+    extend: {
+      colors: {
+        debug: '#ff00ff',
+      },
     },
   },
-},
   plugins: [],
-}
+};

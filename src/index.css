@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+#root {
+  background-image: url("public\images\nightSky.png"); /*背景をいじる箇所*/
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -27,7 +35,6 @@ a:hover {
 }
 
 body {
-  background-image: url("/path/to/image.jpg");
   background-size: cover;
   background-position: center;
   margin: 0;
@@ -61,16 +68,28 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: light) { /*ライトモード*/
   :root {
     color: #213547;
-    background-color: #ffffff; /*ここを変更すると背景を変更可*/
+    /* background-color: #00ffff; ここを変更すると背景を変更可 */
   }
   a:hover {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #535bf2;
+  }
+}
+@media (prefers-color-scheme: dark) { /*ダークモード*/
+  :root {
+    background-color: #121212;
+    color: #f0f0f0;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #310360; /*ボタンの枠の変更部分*/
   }
 }
 
