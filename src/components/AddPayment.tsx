@@ -1,3 +1,4 @@
+// 支払いの追加処理
 export default function AddPayment() {
   return (
     <div className="bg-white rounded-lg shadow p-4 mb-4">

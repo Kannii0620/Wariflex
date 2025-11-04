@@ -1,7 +1,9 @@
+// React-iconから取得
 import { AiFillHome } from 'react-icons/ai';
 import { FaHistory } from 'react-icons/fa';
 import { IoMdNotifications } from 'react-icons/io';
 
+//ナビゲーションボタン
 export default function BottomNav() {
   return (
     <nav className="bg-white border-t p-2 flex justify-around text-sm text-gray-600">

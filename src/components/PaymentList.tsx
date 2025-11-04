@@ -1,3 +1,4 @@
+// 支払いのリスト登録、編集処理
 export default function PaymentList() {
   return (
     <div className="bg-white rounded-lg shadow p-4 mb-4">

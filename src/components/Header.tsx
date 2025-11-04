@@ -1,3 +1,5 @@
+// アプリのヘッダー部分の表示処理
+
 export default function Header() {
   return (
     <div className="mb-4">
