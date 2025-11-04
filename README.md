@@ -1,52 +1,63 @@
-# React + TypeScript + Vite
+# Wariflex
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Wariflex は、割り勘の支払いを記録・管理する Web アプリケーションです。  
+React + TypeScript + Vite をベースに構築されており、Tailwind CSS によるスタイリングと、シンプルなコンポーネント構成で構成されています。
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📦 主な機能
 
-## React Compiler
+- 金額の入力
+- 割り勘モードの選択（均等割り勘 / 片方が多め）
+- 支払いの偏り指定（スライダー + セレクト）
+- 支払い履歴の表示（静的）
+- ナビゲーションバーによる画面切り替え（ホーム / 履歴 / 通知）
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠 使用技術
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| 技術         | 用途                                      |
+|--------------|-------------------------------------------|
+| React        | UI構築（コンポーネントベース）            |
+| TypeScript   | 型安全な開発                              |
+| Vite         | 開発環境・ビルドツール（HMR対応）         |
+| Tailwind CSS | スタイリング（ユーティリティクラス）      |
+| ESLint       | 静的解析とコード品質管理                  |
+| Google Fonts | カスタムフォント（任意）                  |
 
-```js
+---
+
+## ⚙️ 開発環境セットアップ
+
+### 必要環境
+
+- Node.js v18 以上
+- npm v9 以上
+
+### インストール
+
+```bash
+npm install
+
 export default defineConfig([
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
       tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
       tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
       tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
     ],
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.node.json', './tsconfig.app.json'],
         tsconfigRootDir: import.meta.dirname,
       },
-      // other options...
     },
   },
 ])
-```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
 import reactX from 'eslint-plugin-react-x'
 import reactDom from 'eslint-plugin-react-dom'
 
@@ -55,10 +66,7 @@ export default defineConfig([
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
-      // Other configs...
-      // Enable lint rules for React
       reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
       reactDom.configs.recommended,
     ],
     languageOptions: {
@@ -66,8 +74,6 @@ export default defineConfig([
         project: ['./tsconfig.node.json', './tsconfig.app.json'],
         tsconfigRootDir: import.meta.dirname,
       },
-      // other options...
     },
   },
 ])
-```
