@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import './App.css'
 import './index.css'
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -24,6 +23,7 @@ export default function App() {
                               <hr className="my-6 border-gray-300/50" /> {/*←　ここに線と余白を追加*/}
 
                               <PaymentList />
+                              <hr className="my-6 border-gray-300/50" />
                         </main>
                         <BottomNav />
                   </div>

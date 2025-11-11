@@ -1,7 +1,7 @@
 // 支払いのリスト登録、編集処理
 export default function PaymentList() {
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-4">
+    <div className="bg-white rounded-lg shadow p-4 mb-4 text-gray-900">
       <h2 className="font-semibold mb-2">＜未精算の支払いリスト＞</h2>
       <ul className="space-y-2">
         {/* 下は一例 */}
