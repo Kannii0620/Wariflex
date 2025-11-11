@@ -5,6 +5,8 @@ export default function About() {
       <p className="text-gray-700">
         精算リストへの登録処理は正常に完了しました。
         《未精算の支払いリスト》より、お支払いしてください。
+
+        {/* ここに支払いのリザルトを表示 */}
       </p>
     </div>
   );
