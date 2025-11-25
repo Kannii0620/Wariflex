@@ -5,6 +5,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import About from "./pages/PaymentCompleted";
 import DetailSettings from "./pages/DetailSettings";
+import Incomplete from "./pages/Incomplete"; 
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -13,6 +14,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/" element={<App />} />
         <Route path="/about" element={<About />} />
         <Route path="/detail-settings" element={<DetailSettings />} />
+        <Route path="/history" element={<Incomplete />} />
+        <Route path="/notifications" element={<Incomplete />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
