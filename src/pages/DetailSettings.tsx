@@ -123,7 +123,7 @@ export default function DetailSettings() {
                   checked={splitMode === 'even'} 
                   onChange={(e) => setSplitMode(e.target.value)} 
                 />
-                均等割り勘
+                均等割
               </label>
               <label>
                 <input
@@ -133,7 +133,8 @@ export default function DetailSettings() {
                   checked={splitMode === 'uneven'} 
                   onChange={(e) => setSplitMode(e.target.value)} 
                 />
-                カスタム
+                みんなが支える割
+                {/* 一人を固定して、残りの確率バーを操作する */}
               </label>
             </div>
           </div>
