@@ -1,8 +1,4 @@
-import { useState } from 'react'
 import './index.css'
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
 import Header from './components/Header.tsx';
 import AddPayment from './components/AddPayment.tsx';
 import PaymentList from './components/PaymentList.tsx';
