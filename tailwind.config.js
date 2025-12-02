@@ -15,7 +15,7 @@ export default {
     'border-yellow-400',
   ],
   theme: {
-    extend: { // ← "extend" の中に設定
+    extend: { 
       fontFamily: {
         sans: ['"Noto Sans JP"', 'sans-serif'],
         katari: ['"Shippori Mincho"', 'serif'],

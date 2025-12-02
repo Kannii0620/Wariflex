@@ -1,94 +1,158 @@
-import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import Header from '../components/Header'; // Header を import
+import React, { useState } from 'react'; 
+import { useLocation, useNavigate } from 'react-router-dom';
+import Header from '../components/Header';
 import { BsFillTrash3Fill } from "react-icons/bs";
-import { Link } from 'react-router-dom';
-
-// TypeScriptのための「型」定義
-type Participant = {
-  id: number;
-  name: string;
-  percentage: number;
-};
+import { usePaymentStore } from '../store';
+import type { Participant } from '../store';
 
 export default function DetailSettings() {
   const location = useLocation();
   const amount = location.state?.amount || 0;
 
-  // 「支払い名」の状態
+  const navigate = useNavigate();
+  const addPayment = usePaymentStore((state) => state.addPayment);
+
+  // --- 状態 (State) ---
   const [paymentName, setPaymentName] = useState("");
-
-  // 「割り勘モード」の状態 (初期値は "even" = 均等)
   const [splitMode, setSplitMode] = useState("even");
-
-  // 「参加者リスト」の状態 
   const [participants, setParticipants] = useState<Participant[]>([
     { id: 1, name: 'Aさん', percentage: 50 },
     { id: 2, name: 'Bさん', percentage: 50 },
   ]);
 
-  // 参加者の名前を変更する関数
+  // --- ロジック (Functions) ---
+
+  // 1. 名前変更
   const handleNameChange = (id: number, newName: string) => {
-    setParticipants(currentParticipants =>
-      currentParticipants.map(person =>
-        person.id === id ? { ...person, name: newName } : person
-      )
+    setParticipants(current => 
+      current.map(p => p.id === id ? { ...p, name: newName } : p)
     );
   };
 
-  // 参加者のスライダーを動かす関数 
+  // 2. モード切替 & 均等計算
+  const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newMode = e.target.value;
+    setSplitMode(newMode);
+
+    // 「均等」を選んだら、全員の数値をリセット！
+    if (newMode === 'even') {
+      setParticipants(currentParticipants => {
+        const count = currentParticipants.length;
+        if (count === 0) return currentParticipants;
+        
+        // 100 ÷ 人数 の計算 (余りは前の人に1ずつ配る)
+        const base = Math.floor(100 / count);
+        const remainder = 100 % count;
+        
+        return currentParticipants.map((p, i) => ({
+          ...p,
+          percentage: base + (i < remainder ? 1 : 0)
+        }));
+      });
+    }
+  };
+
+  // 3. スライダー変更 (カスタムモード時のみ)
   const handleSliderChange = (id: number, newValue: number) => {
-    const totalParticipants = participants.length;
-    // 自分以外の参加者
     const otherParticipants = participants.filter(p => p.id !== id);
-
-    // 自分が動かした量
     const change = newValue - participants.find(p => p.id === id)!.percentage;
-
-    // 他の参加者一人あたりが減るべき量
     const changePerOther = otherParticipants.length > 0 ? change / otherParticipants.length : 0;
 
-    setParticipants(currentParticipants =>
-      currentParticipants.map(person => {
-        // 動かした本人
-        if (person.id === id) {
-          return { ...person, percentage: newValue };
+    setParticipants(current =>
+      current.map(p => {
+        if (p.id === id) return { ...p, percentage: newValue };
+        if (otherParticipants.find(op => op.id === p.id)) {
+          const adjusted = Math.max(0, p.percentage - changePerOther);
+          return { ...p, percentage: adjusted };
         }
-        // 他の参加者
-        if (otherParticipants.find(p => p.id === person.id)) {
-          // 他の人の割合を自動で減らす (0%未満にはならない)
-          const adjustedPercentage = Math.max(0, person.percentage - changePerOther);
-          return { ...person, percentage: adjustedPercentage };
-        }
-        return person;
+        return p;
       })
     );
   };
 
-  // 参加者を追加する関数
+  // 4. 参加者追加
   const addParticipant = () => {
-    // 新しい参加者のIDを計算 (今の最大ID + 1、または参加者がいなければ 1)
     const newId = participants.length > 0 ? Math.max(...participants.map(p => p.id)) + 1 : 1;
+    
+    setParticipants(currentParticipants => {
+      const newPerson = {
+        id: newId,
+        name: `（${currentParticipants.length + 1}人目）`,
+        percentage: 0 
+      };
+      const updatedList = [...currentParticipants, newPerson];
 
-    const newParticipant: Participant = {
-      id: newId,
-      name: `（${participants.length + 1}人目）`,
-      percentage: 0 //　初期値は0%
-    };
-
-    setParticipants(currentParticipants =>
-      [...currentParticipants, newParticipant]
-    );
+      // ★ 均等モードなら、追加後に即座に再計算！
+      if (splitMode === 'even') {
+        const count = updatedList.length;
+        const base = Math.floor(100 / count);
+        const remainder = 100 % count;
+        return updatedList.map((p, i) => ({
+          ...p,
+          percentage: base + (i < remainder ? 1 : 0)
+        }));
+      }
+      return updatedList;
+    });
   };
 
-  // 参加者を削除する関数
+  // 5. 参加者削除
   const removeParticipant = (id: number) => {
-    // 削除したい人（id）「以外」の全員で新しい配列を作る
-    setParticipants(currentParticipants =>
-      currentParticipants.filter(person => person.id !== id)
-    );
+    setParticipants(currentParticipants => {
+      const updatedList = currentParticipants.filter(person => person.id !== id);
+
+      // ★ 均等モードなら、削除後に即座に再計算！
+      if (splitMode === 'even' && updatedList.length > 0) {
+        const count = updatedList.length;
+        const base = Math.floor(100 / count);
+        const remainder = 100 % count;
+        return updatedList.map((p, i) => ({
+          ...p,
+          percentage: base + (i < remainder ? 1 : 0)
+        }));
+      }
+      return updatedList;
+    });
   };
 
+  const calculatedParticipants = (() => {
+    const total = Number(amount);
+    let currentSum = 0;
+
+    // 1. まず全員分を「切り捨て」で計算
+    const temp = participants.map(p => {
+      const val = Math.floor(total * (p.percentage / 100));
+      currentSum += val;
+      return { ...p, estimatedAmount: val };
+    });
+
+    // 2. 余りを計算 (例: 205 - 204 = 1円)
+    let remainder = total - currentSum;
+
+    // 3. 余りを上から順に配る
+    return temp.map(p => {
+      if (remainder > 0) {
+        p.estimatedAmount += 1;
+        remainder--;
+      }
+      return p;
+    });
+  })();
+
+  // 6. 保存して完了
+  const handleComplete = () => {
+    const title = paymentName || "(名称未設定)";
+    const newPayment = {
+      id: Date.now(),
+      title: title,
+      totalAmount: Number(amount),
+      participants: participants,
+    };
+    addPayment(newPayment);
+    navigate('/about');
+  };
+
+  // --- 表示 (JSX) ---
   return (
     <div className="min-h-screen bg-linear-to-b from-sky-400 to-blue-800 p-4">
       <div className="max-w-md mx-auto">
@@ -100,7 +164,6 @@ export default function DetailSettings() {
             割り勘前の金額: <strong>{amount} 円</strong>
           </p>
 
-          {/* --- 「支払い名」 --- */}
           <div className="mb-6">
             <label className="block text-lg font-semibold mb-3">支払い名</label>
             <input
@@ -112,89 +175,90 @@ export default function DetailSettings() {
             />
           </div>
 
-          {/* --- 割り勘モード選択 --- */}
           <div className="mb-6">
             <label className="block text-lg font-semibold mb-3">割り勘モード</label>
             <div className="flex gap-4">
-              <label>
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   name="splitMode"
                   value="even"
                   checked={splitMode === 'even'}
-                  onChange={(e) => setSplitMode(e.target.value)}
+                  onChange={handleModeChange}
+                  className="mr-2"
                 />
                 均等割
               </label>
-              <label>
+              <label className="flex items-center cursor-pointer">
                 <input
                   type="radio"
                   name="splitMode"
                   value="uneven"
                   checked={splitMode === 'uneven'}
-                  onChange={(e) => setSplitMode(e.target.value)}
+                  onChange={handleModeChange}
+                  className="mr-2"
                 />
-                みんなが支える割
-                {/* 一人を固定して、残りの確率バーを操作する */}
+                カスタム
               </label>
             </div>
           </div>
 
-          {/* --- 支払いの偏り指定 --- */}
           <div className="mb-6">
             <label className="block text-lg font-semibold mb-3">支払いの偏り</label>
 
-            {participants.map((person) => (
-              <div key={person.id} className="mb-4 p-3 bg-gray-100 rounded-lg">
+            {calculatedParticipants.map((person) => {
+              // 目安金額の計算
+              
+              return (
+                <div key={person.id} className="mb-4 p-3 bg-gray-100 rounded-lg">
+                  <div className="flex justify-between items-center mb-2 gap-2">
+                    <input
+                      type="text"
+                      value={person.name}
+                      onChange={(e) => handleNameChange(person.id, e.target.value)}
+                      className="w-full p-2 border rounded"
+                    />
+                    <button
+                      onClick={() => removeParticipant(person.id)}
+                      className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                    >
+                      <BsFillTrash3Fill />
+                    </button>
+                  </div>
 
-                {/* 名前入力と削除ボタン */}
-                <div className="flex justify-between items-center mb-2 gap-2">
                   <input
-                    type="text"
-                    value={person.name}
-                    onChange={(e) => {
-                      handleNameChange(person.id, e.target.value);
-                    }}
-                    className="w-full p-2 border rounded"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={person.percentage}
+                    onChange={(e) => handleSliderChange(person.id, Number(e.target.value))}
+                    disabled={splitMode === 'even'}
+                    className={`w-full ${splitMode === 'even' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   />
-                  <button
-                    onClick={() => removeParticipant(person.id)}
-                    className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-                  >
-                    <BsFillTrash3Fill />
-                  </button>
+                  
+                  <div className="flex justify-between text-sm text-gray-700 mt-1">
+                    <span>割合: <strong>{person.percentage}%</strong></span>
+                    {/* ★計算済みの estimatedAmount を表示 */}
+                    <span>目安: <strong>¥{person.estimatedAmount.toLocaleString()}</strong></span>
+                  </div>
                 </div>
+              );
+            })}
 
-                {/* 各参加者のスライダー */}
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={person.percentage}
-                  onChange={(e) => {
-                    handleSliderChange(person.id, Number(e.target.value));
-                  }}
-                  className="w-full"
-                />
-                <span className="text-sm text-gray-700">{person.name} の割合: {person.percentage}%</span>
-              </div>
-            ))}
-
-            {/* 「参加者を追加」ボタン */}
             <button
-              onClick={() => {
-                addParticipant();
-              }}
+              onClick={addParticipant}
               className="w-full p-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300"
             >
               ＋ 参加者を追加する
             </button>
           </div>
 
-          {/* --- 決定ボタン --- */}
-          <Link to="/about" className="w-full block text-center bg-emerald-600 text-white font-semibold p-3 rounded-lg shadow-lg hover:bg-emerald-700">
+          <button 
+            onClick={handleComplete} 
+            className="w-full block text-center bg-emerald-600 text-white font-semibold p-3 rounded-lg shadow-lg hover:bg-emerald-700"
+          >
             この内容で割り勘を精算
-          </Link>
+          </button>
         </div>
       </div>
     </div>

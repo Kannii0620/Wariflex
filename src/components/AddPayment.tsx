@@ -1,25 +1,25 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 画面遷移フック
-import { AnimatedButton } from './AnimatedButton'; // 改造したボタンを import
+import { useNavigate } from 'react-router-dom'; 
+import { AnimatedButton } from './AnimatedButton'; 
 
 export default function AddPayment() {
-  // 1. 金額を保存するための「状態」
   const [amount, setAmount] = useState('');
-  
-  // 2. 画面遷移を使うための準備
   const navigate = useNavigate();
 
-  // 3. ボタンがクリックされた時の処理
   const handleNextStep = () => {
-    if (amount) {
-      // もし金額が入力されていたら...
-      // "/detail-settings"（詳細設定ページ）へ遷移する
-      // (state で金額データを次のページに渡すこともできます)
-      navigate('/detail-settings', { state: { amount: amount } });
-    } else {
-      // 未入力ならアラート
-      alert('入力エラー：金額を入力してください');
+    const numericAmount = Number(amount); 
+
+    if (!amount) {
+      navigate('/error', { state: { message: "金額が入力されていません。数値を入力してください。" } });
+      return;
     }
+
+    if (numericAmount <= 0) {
+      navigate('/error', { state: { message: "マイナスの値や0円は登録できません。正しい金額を入力してください。" } });
+      return;
+    }
+
+    navigate('/detail-settings', { state: { amount: amount } });
   };
 
   return (
