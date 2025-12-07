@@ -3,7 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { BsFillTrash3Fill } from "react-icons/bs";
 import { usePaymentStore } from '../store';
-import type { Participant } from '../store';
+// import type { Participant } from '../store'; // ← ストアの型は使わず、ここで独自に定義します
+
+// UI管理用の一時的な型定義
+type LocalParticipant = {
+  id: string; // IDは文字列にする
+  name: string;
+  percentage: number;
+};
 
 export default function DetailSettings() {
   const location = useLocation();
@@ -15,15 +22,17 @@ export default function DetailSettings() {
   // --- 状態 (State) ---
   const [paymentName, setPaymentName] = useState("");
   const [splitMode, setSplitMode] = useState("even");
-  const [participants, setParticipants] = useState<Participant[]>([
-    { id: 1, name: 'Aさん', percentage: 50 },
-    { id: 2, name: 'Bさん', percentage: 50 },
+  
+  // 初期値 (IDは適当な文字列でOK)
+  const [participants, setParticipants] = useState<LocalParticipant[]>([
+    { id: '1', name: 'Aさん', percentage: 50 },
+    { id: '2', name: 'Bさん', percentage: 50 },
   ]);
 
-  // --- ロジック (Functions) ---
+  // --- ロジック ---
 
   // 1. 名前変更
-  const handleNameChange = (id: number, newName: string) => {
+  const handleNameChange = (id: string, newName: string) => {
     setParticipants(current => 
       current.map(p => p.id === id ? { ...p, name: newName } : p)
     );
@@ -34,13 +43,11 @@ export default function DetailSettings() {
     const newMode = e.target.value;
     setSplitMode(newMode);
 
-    // 「均等」を選んだら、全員の数値をリセット！
     if (newMode === 'even') {
       setParticipants(currentParticipants => {
         const count = currentParticipants.length;
         if (count === 0) return currentParticipants;
         
-        // 100 ÷ 人数 の計算 (余りは前の人に1ずつ配る)
         const base = Math.floor(100 / count);
         const remainder = 100 % count;
         
@@ -52,10 +59,14 @@ export default function DetailSettings() {
     }
   };
 
-  // 3. スライダー変更 (カスタムモード時のみ)
-  const handleSliderChange = (id: number, newValue: number) => {
+  // 3. スライダー変更
+  const handleSliderChange = (id: string,QlValue: number) => {
+    const newValue = Number(QlValue);
     const otherParticipants = participants.filter(p => p.id !== id);
-    const change = newValue - participants.find(p => p.id === id)!.percentage;
+    const target = participants.find(p => p.id === id);
+    if (!target) return;
+
+    const change = newValue - target.percentage;
     const changePerOther = otherParticipants.length > 0 ? change / otherParticipants.length : 0;
 
     setParticipants(current =>
@@ -72,7 +83,7 @@ export default function DetailSettings() {
 
   // 4. 参加者追加
   const addParticipant = () => {
-    const newId = participants.length > 0 ? Math.max(...participants.map(p => p.id)) + 1 : 1;
+    const newId = Date.now().toString(); // IDを文字列にする
     
     setParticipants(currentParticipants => {
       const newPerson = {
@@ -82,7 +93,6 @@ export default function DetailSettings() {
       };
       const updatedList = [...currentParticipants, newPerson];
 
-      // ★ 均等モードなら、追加後に即座に再計算！
       if (splitMode === 'even') {
         const count = updatedList.length;
         const base = Math.floor(100 / count);
@@ -97,11 +107,10 @@ export default function DetailSettings() {
   };
 
   // 5. 参加者削除
-  const removeParticipant = (id: number) => {
+  const removeParticipant = (id: string) => {
     setParticipants(currentParticipants => {
       const updatedList = currentParticipants.filter(person => person.id !== id);
 
-      // ★ 均等モードなら、削除後に即座に再計算！
       if (splitMode === 'even' && updatedList.length > 0) {
         const count = updatedList.length;
         const base = Math.floor(100 / count);
@@ -115,21 +124,16 @@ export default function DetailSettings() {
     });
   };
 
+  // 6. 計算用 (表示用)
   const calculatedParticipants = (() => {
     const total = Number(amount);
     let currentSum = 0;
-
-    // 1. まず全員分を「切り捨て」で計算
     const temp = participants.map(p => {
       const val = Math.floor(total * (p.percentage / 100));
       currentSum += val;
       return { ...p, estimatedAmount: val };
     });
-
-    // 2. 余りを計算 (例: 205 - 204 = 1円)
     let remainder = total - currentSum;
-
-    // 3. 余りを上から順に配る
     return temp.map(p => {
       if (remainder > 0) {
         p.estimatedAmount += 1;
@@ -139,16 +143,14 @@ export default function DetailSettings() {
     });
   })();
 
-  // 6. 保存して完了
-  const handleComplete = () => {
+  // 7. 保存して完了 (DBへ保存)
+  const handleComplete = async () => {
     const title = paymentName || "(名称未設定)";
-    const newPayment = {
-      id: Date.now(),
-      title: title,
-      totalAmount: Number(amount),
-      participants: participants,
-    };
-    addPayment(newPayment);
+    
+    // ★ここが変更点！
+    // ID生成などはストア(DB)に任せて、必要なデータだけを渡す
+    await addPayment(title, Number(amount), participants);
+
     navigate('/about');
   };
 
@@ -207,8 +209,6 @@ export default function DetailSettings() {
             <label className="block text-lg font-semibold mb-3">支払いの偏り</label>
 
             {calculatedParticipants.map((person) => {
-              // 目安金額の計算
-              
               return (
                 <div key={person.id} className="mb-4 p-3 bg-gray-100 rounded-lg">
                   <div className="flex justify-between items-center mb-2 gap-2">
@@ -238,7 +238,6 @@ export default function DetailSettings() {
                   
                   <div className="flex justify-between text-sm text-gray-700 mt-1">
                     <span>割合: <strong>{person.percentage}%</strong></span>
-                    {/* ★計算済みの estimatedAmount を表示 */}
                     <span>目安: <strong>¥{person.estimatedAmount.toLocaleString()}</strong></span>
                   </div>
                 </div>

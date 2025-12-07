@@ -5,6 +5,8 @@ React + TypeScript + Vite をベースに構築されており、Tailwind CSS �
 
 ---
 
+**🚀 デモサイト (Vercel):** **[https://wariflex-or3qlcaig-kannii0620s-projects.vercel.app/]**
+
 ## 📦 主な機能
 
 - 金額の入力
@@ -25,6 +27,7 @@ React + TypeScript + Vite をベースに構築されており、Tailwind CSS �
 | Tailwind CSS | スタイリング（ユーティリティクラス）      |
 | ESLint       | 静的解析とコード品質管理                  |
 | Google Fonts | カスタムフォント（任意）                  |
+| Vercel       | Web アプリケーションのホスティングと公開   |
 
 ---
 
