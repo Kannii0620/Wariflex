@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { BsFillTrash3Fill } from "react-icons/bs";
 import { usePaymentStore } from '../store';
-// import type { Participant } from '../store'; // ← ストアの型は使わず、ここで独自に定義します
 
 // UI管理用の一時的な型定義
 type LocalParticipant = {
