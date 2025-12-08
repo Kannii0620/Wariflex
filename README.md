@@ -5,7 +5,7 @@ React + TypeScript + Vite をベースに構築されており、Tailwind CSS �
 
 ---
 
-**🚀 デモサイト (Vercel):** **[https://vercel.com/kannii0620s-projects/wariflex/5GxfPXdq6UMHDpLfEwY6ZTWBQYHp]**
+**🚀 デモサイト (Vercel):** **[https://vercel.com/kannii0620s-projects/wariflex/3nrproGr13YjWKdfp42mH2cTEB5b]**
 
 ## 📦 主な機能
 
