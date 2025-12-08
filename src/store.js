@@ -1,44 +1,15 @@
 import { create } from 'zustand';
-import { supabase } from './supabase'; // ← さっき作ったファイルをインポート
+import { supabase } from './supabase';
 
-// 参加者型 (DBに合わせて ID は string に変更)
-export type Participant = {
-  id: string; 
-  name: string;
-  percentage: number; 
-};
-
-// 支払い型 (DBに合わせて ID は string に変更)
-export type Payment = {
-  id: string;
-  title: string;
-  totalAmount: number;
-  participants: Participant[];
-  completedAt?: string;
-  status: 'active' | 'history';
-};
-
-type PaymentState = {
-  payments: Payment[]; // 未精算リスト
-  history: Payment[];  // 履歴リスト
-  loading: boolean;    // 読み込み中かどうか
-
-  fetchPayments: () => Promise<void>; // データ取得
-  addPayment: (title: string, amount: number, participants: { name: string; percentage: number }[]) => Promise<void>;
-  moveToHistory: (id: string) => Promise<void>;
-  deletePayment: (id: string) => Promise<void>;
-};
-
-export const usePaymentStore = create<PaymentState>((set, get) => ({
+export const usePaymentStore = create((set, get) => ({
   payments: [],
   history: [],
   loading: false,
 
-  // 1. データ取得 (DBから読み込む)
+  // 1. データ取得
   fetchPayments: async () => {
     set({ loading: true });
 
-    // 親テーブル (payments) 取得
     const { data: paymentsData, error: paymentsError } = await supabase
       .from('payments')
       .select('*')
@@ -50,7 +21,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return;
     }
 
-    // 子テーブル (participants) 取得
     const { data: participantsData, error: participantsError } = await supabase
       .from('participants')
       .select('*');
@@ -61,8 +31,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return;
     }
 
-    // データを結合して整形
-    const formattedPayments: Payment[] = paymentsData.map((p) => {
+    const formattedPayments = paymentsData.map((p) => {
       const relatedParticipants = participantsData
         .filter((part) => part.payment_id === p.id)
         .map((part) => ({
@@ -88,9 +57,8 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     });
   },
 
-  // 2. 追加 (DBに保存)
+  // 2. 追加
   addPayment: async (title, amount, participants) => {
-    // まず親テーブルに保存
     const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
       .insert([{ title: title, total_amount: amount, status: 'active' }])
@@ -102,7 +70,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return;
     }
 
-    // 次に子テーブルに保存
     const participantsToInsert = participants.map((p) => ({
       payment_id: paymentData.id,
       name: p.name,
@@ -117,11 +84,10 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       console.error('Error adding participants:', participantsError);
     }
 
-    // 最新データを再取得
     get().fetchPayments();
   },
 
-  // 3. 履歴へ移動 (ステータス更新)
+  // 3. 履歴へ移動
   moveToHistory: async (id) => {
     const { error } = await supabase
       .from('payments')
@@ -132,7 +98,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     get().fetchPayments();
   },
 
-  // 4. 削除 (DBから削除)
+  // 4. 削除
   deletePayment: async (id) => {
     const { error } = await supabase
       .from('payments')
