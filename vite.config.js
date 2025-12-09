@@ -6,10 +6,12 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(), // ← 2. ここに tailwindcss() を追加
+    tailwindcss(),
   ],
   server: {
-    open: true, // ← これで起動時にブラウザが自動で開く！
+    open: true,
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
   },
 });
-
