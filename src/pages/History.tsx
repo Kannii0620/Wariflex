@@ -55,45 +55,45 @@ export default function History() {
                 履歴はありません。
               </p>
             ) : (
-              <ul className="space-y-6">
-                {history.map((payment) => {
+                <ul className="space-y-6">
+                {history.map((payment: { id: string; title: string; totalAmount: number; completedAt: string; participants: { name: string; percentage: number }[]; }) => {
                   const splitResults = calculateSplit(payment.totalAmount, payment.participants);
 
                   return (
-                    <li key={payment.id} className="border-b border-gray-300 pb-4 last:border-0">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <span className="font-bold text-lg block">{payment.title}</span>
-                          <span className="text-xs text-gray-500">
-                            {payment.completedAt} 完了
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold text-lg text-gray-700 block">
-                            ¥{payment.totalAmount.toLocaleString()}
-                          </span>
-                          <button 
-                            onClick={() => handleDelete(payment.id, payment.title)}
-                            className="text-gray-400 hover:text-red-500 text-sm mt-1 p-2"
-                            title="完全に削除"
-                          >
-                            <BsFillTrash3Fill size={18} />
-                          </button>
-                        </div>
-                      </div>
+                  <li key={payment.id} className="border-b border-gray-300 pb-4 last:border-0">
+                    <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-bold text-lg block">{payment.title}</span>
+                      <span className="text-xs text-gray-500">
+                      {payment.completedAt} 完了
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-lg text-gray-700 block">
+                      ¥{payment.totalAmount.toLocaleString()}
+                      </span>
+                      <button 
+                      onClick={() => handleDelete(payment.id, payment.title)}
+                      className="text-gray-400 hover:text-red-500 text-sm mt-1 p-2"
+                      title="完全に削除"
+                      >
+                      <BsFillTrash3Fill size={18} />
+                      </button>
+                    </div>
+                    </div>
 
-                      <div className="bg-gray-100 p-3 rounded-lg text-sm space-y-1">
-                        {splitResults.map((p, index) => (
-                          <div key={index} className="flex justify-between text-gray-600">
-                            <span>{p.name} ({p.percentage}%)</span>
-                            <span className="font-medium">¥{p.payAmount.toLocaleString()}</span>
-                          </div>
-                        ))}
+                    <div className="bg-gray-100 p-3 rounded-lg text-sm space-y-1">
+                    {splitResults.map((p: { name: string; percentage: number; payAmount: number }, index: number) => (
+                      <div key={index} className="flex justify-between text-gray-600">
+                      <span>{p.name} ({p.percentage}%)</span>
+                      <span className="font-medium">¥{p.payAmount.toLocaleString()}</span>
                       </div>
-                    </li>
+                    ))}
+                    </div>
+                  </li>
                   );
                 })}
-              </ul>
+                </ul>
             )}
           </div>
 
