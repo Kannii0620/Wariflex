@@ -16,6 +16,7 @@ export type Payment = {
   participants: Participant[];
   completedAt?: string;
   status: 'active' | 'history';
+  message?: string;
 };
 
 type PaymentState = {
@@ -24,7 +25,7 @@ type PaymentState = {
   loading: boolean;    // 読み込み中かどうか
 
   fetchPayments: () => Promise<void>; // データ取得
-  addPayment: (title: string, amount: number, participants: { name: string; percentage: number }[]) => Promise<void>;
+  addPayment: (title: string, amount: number, participants: { name: string; percentage: number }[], message: string) => Promise<void>;
   moveToHistory: (id: string) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
 };
@@ -78,6 +79,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         participants: relatedParticipants,
         completedAt: p.completed_at ? new Date(p.completed_at).toLocaleString() : undefined,
         status: p.status,
+        message: p.message,
       };
     });
 
@@ -89,11 +91,11 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   },
 
   // 2. 追加 (DBに保存)
-  addPayment: async (title, amount, participants) => {
+  addPayment: async (title, amount, participants, message) => {
     // まず親テーブルに保存
     const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
-      .insert([{ title: title, total_amount: amount, status: 'active' }])
+      .insert([{ title: title, total_amount: amount, status: 'active', message: message }])
       .select()
       .single();
 

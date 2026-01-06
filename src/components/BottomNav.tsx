@@ -2,27 +2,48 @@
 import { AiFillHome } from 'react-icons/ai';
 import { FaHistory } from 'react-icons/fa';
 import { IoMdNotifications } from 'react-icons/io';
-import { Link } from 'react-router-dom'; 
+import { Link, useLocation } from 'react-router-dom'; // ← useLocation を追加
 
 export default function BottomNav() {
-  return (
-    <nav className="bg-white/90 p-4 flex justify-around text-sm text-gray-900 rounded-2xl shadow-lg mt-2">
+  const location = useLocation(); // ← これで「今のURL」が分かります
+
+  // 共通のデザイン設定
+  const activeColor = "text-blue-600"; // 選択されているときの色
+  const inactiveColor = "text-gray-400"; // 選択されていないときの色
+
+  return (
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 backdrop-blur-md shadow-2xl rounded-full z-50 border border-white/20 flex justify-around items-center h-16">
       
-      {/* ホームボタンを Link に変更 to="/" */}
-      <Link to="/" className="flex flex-col items-center text-blue-600"> {/* ← Link に変更し、to="/" を追加 */}
-        <AiFillHome size={24} />
-        ホーム
-      </Link>
-      {/* 履歴ボタンを Link に変更 to="/history" */}
-      <Link to="/history" className="flex flex-col items-center"> {/* ← Link に変更し、to="/history" を追加 */}
-        <FaHistory size={24} />
-        履歴
-      </Link>
-      {/* 通知ボタンを Link に変更 to="/notifications" */}
-      <Link to="/notifications" className="flex flex-col items-center"> {/* ← Link に変更し、to="/notifications" を追加 */}
-        <IoMdNotifications size={24} />
-        通知
-      </Link>
-    </nav>
-  );
+      {/* ホームボタン */}
+      <Link 
+        to="/" 
+        className={`flex flex-col items-center transition-colors duration-200 
+          ${location.pathname === "/" ? activeColor : inactiveColor}`}
+      >
+        <AiFillHome size={24} />
+        <span className="text-xs">ホーム</span>
+      </Link>
+
+      {/* 履歴ボタン */}
+      <Link 
+        to="/history" 
+        className={`flex flex-col items-center transition-colors duration-200 
+          ${location.pathname === "/history" ? activeColor : inactiveColor}`}
+      >
+        <FaHistory size={24} />
+        <span className="text-xs">履歴</span>
+      </Link>
+
+      {/* 通知ボタン */}
+      <Link 
+        to="/notifications" 
+        className={`flex flex-col items-center transition-colors duration-200 
+          ${location.pathname === "/notifications" ? activeColor : inactiveColor}`}
+      >
+        <IoMdNotifications size={24} />
+        <span className="text-xs">通知</span>
+      </Link>
+
+    </nav>
+  );
 }

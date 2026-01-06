@@ -20,6 +20,7 @@ export default function DetailSettings() {
 
   // --- 状態 (State) ---
   const [paymentName, setPaymentName] = useState("");
+  const [message, setMessage] = useState("");
   const [splitMode, setSplitMode] = useState("even");
   
   // 初期値 (IDは適当な文字列でOK)
@@ -148,7 +149,7 @@ export default function DetailSettings() {
     
     // ★ここが変更点！
     // ID生成などはストア(DB)に任せて、必要なデータだけを渡す
-    await addPayment(title, Number(amount), participants);
+    await addPayment(title, Number(amount), participants, message);
 
     navigate('/about');
   };
@@ -173,6 +174,19 @@ export default function DetailSettings() {
               className="w-full p-3 bg-white rounded-lg border-2 border-black/60 focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               value={paymentName}
               onChange={(e) => setPaymentName(e.target.value)}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              メモ・メッセージ
+            </label>
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="例：2次会のタクシー代"
             />
           </div>
 
