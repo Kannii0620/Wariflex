@@ -1,11 +1,15 @@
 # Wariflex
 
+![WariFlex Banner](./banner.png)
+
+# 概要
+
 Wariflex は、割り勘の支払いを記録・管理する Web アプリケーションです。  
 React + TypeScript + Vite をベースに構築されており、Tailwind CSS によるスタイリングと、シンプルなコンポーネント構成で構成されています。
 
 ---
 
-**🚀 デモサイト (Vercel):** **[https://vercel.com/kannii0620s-projects/wariflex/5GxfPXdq6UMHDpLfEwY6ZTWBQYHp]**
+**🚀 デモサイト (Vercel):** **[https://wariflex.vercel.app/]**
 
 ## 📦 主な機能
 
