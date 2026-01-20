@@ -7,7 +7,7 @@ export default function AddPayment() {
   const navigate = useNavigate();
 
   const handleNextStep = () => {
-    const numericAmount = Number(amount); 
+    const numericAmount = Math.floor(Number(amount));
 
     if (!amount) {
       navigate('/error', { state: { message: "金額が入力されていません。数値を入力してください。" } });
@@ -15,11 +15,16 @@ export default function AddPayment() {
     }
 
     if (numericAmount <= 0) {
-      navigate('/error', { state: { message: "マイナスの値や0円は登録できません。正しい金額を入力してください。" } });
+      navigate('/error', { state: { message: "マイナスの値や1円より小さい金額は登録できません。正しい金額を入力してください。" } });
       return;
     }
 
-    navigate('/detail-settings', { state: { amount: amount } });
+    if (numericAmount > 1000000) {
+      navigate('/error', { state: { message: "100万円より大きい金額はこの割り勘システムでは対応していません。正しい金額を入力するか、100万円を超える場合は2回以上に分けてご利用ください。" } });
+      return;
+    }
+
+    navigate('/detail-settings', { state: { amount: numericAmount } });
   };
 
   return (

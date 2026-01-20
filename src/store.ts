@@ -1,14 +1,14 @@
 import { create } from 'zustand';
-import { supabase } from './supabase'; // ← さっき作ったファイルをインポート
+import { supabase } from './supabase';
 
-// 参加者型 (DBに合わせて ID は string に変更)
+// 参加者型
 export type Participant = {
   id: string; 
   name: string;
   percentage: number; 
 };
 
-// 支払い型 (DBに合わせて ID は string に変更)
+// 支払い型
 export type Payment = {
   id: string;
   title: string;
@@ -17,6 +17,7 @@ export type Payment = {
   completedAt?: string;
   status: 'active' | 'history';
   message?: string;
+  date?: string; // ★追加済み
 };
 
 type PaymentState = {
@@ -28,6 +29,10 @@ type PaymentState = {
   addPayment: (title: string, amount: number, participants: { name: string; percentage: number }[], message: string) => Promise<void>;
   moveToHistory: (id: string) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
+
+  // ★追加済み：履歴削除系
+  deleteHistoryItem: (id: string) => Promise<void>;
+  clearHistory: () => Promise<void>;
 };
 
 export const usePaymentStore = create<PaymentState>((set, get) => ({
@@ -80,6 +85,8 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         completedAt: p.completed_at ? new Date(p.completed_at).toLocaleString() : undefined,
         status: p.status,
         message: p.message,
+        // 日付をセット
+        date: p.created_at ? new Date(p.created_at).toLocaleDateString() : undefined,
       };
     });
 
@@ -92,7 +99,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
   // 2. 追加 (DBに保存)
   addPayment: async (title, amount, participants, message) => {
-    // まず親テーブルに保存
+    // 親テーブルに保存
     const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
       .insert([{ title: title, total_amount: amount, status: 'active', message: message }])
@@ -104,7 +111,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return;
     }
 
-    // 次に子テーブルに保存
+    // 子テーブルに保存
     const participantsToInsert = participants.map((p) => ({
       payment_id: paymentData.id,
       name: p.name,
@@ -119,7 +126,6 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       console.error('Error adding participants:', participantsError);
     }
 
-    // 最新データを再取得
     get().fetchPayments();
   },
 
@@ -134,7 +140,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     get().fetchPayments();
   },
 
-  // 4. 削除 (DBから削除)
+  // 4. 削除 (DBから削除：未精算リストからの削除)
   deletePayment: async (id) => {
     const { error } = await supabase
       .from('payments')
@@ -142,6 +148,28 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       .eq('id', id);
 
     if (error) console.error('Error deleting payment:', error);
+    get().fetchPayments();
+  },
+
+  // 5. 履歴を1つ削除 (DBから削除)
+  deleteHistoryItem: async (id) => {
+    const { error } = await supabase
+      .from('payments')
+      .delete()
+      .eq('id', id);
+
+    if (error) console.error('Error deleting history item:', error);
+    get().fetchPayments();
+  },
+
+  // 6. 履歴を全削除 (ステータスが history のものを一括削除)
+  clearHistory: async () => {
+    const { error } = await supabase
+      .from('payments')
+      .delete()
+      .eq('status', 'history'); 
+
+    if (error) console.error('Error clearing history:', error);
     get().fetchPayments();
   },
 }));

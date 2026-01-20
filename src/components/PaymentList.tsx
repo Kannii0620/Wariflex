@@ -1,37 +1,44 @@
-import { useEffect } from 'react'; // ← useEffect を追加
+import { useEffect } from 'react';
 import { usePaymentStore } from '../store';
 import type { Participant } from '../store';
 import { BsCheckCircleFill , BsDownload } from "react-icons/bs";
 
-// --- 計算ロジック ---
 const calculateSplit = (total: number, participants: Participant[] | undefined) => {
   if (!participants || participants.length === 0) return [];
 
-  let currentSum = 0;
-  const tempResults = participants.map(p => {
-    const amount = Math.floor(total * (p.percentage / 100));
-    currentSum += amount;
-    return { ...p, payAmount: amount };
+  // ★追加: 現在のパーセントの合計値を計算 (例: 100.03)
+  const totalPercentage = participants.reduce((sum, p) => sum + p.percentage, 0);
+
+  // 1. 全員の金額を計算
+  const rawData = participants.map(p => {
+    const ratio = p.percentage / totalPercentage; 
+    const rawVal = total * ratio;
+
+    return {
+      ...p,
+      intVal: Math.floor(rawVal),          // 整数部分
+      decimalPart: rawVal - Math.floor(rawVal) // 小数部分
+    };
   });
 
+  // 2. 整数部分の合計と、余りを計算
+  const currentSum = rawData.reduce((acc, p) => acc + p.intVal, 0);
   let remainder = total - currentSum;
 
-  const finalResults = tempResults.map(p => {
-    if (remainder > 0) {
-      p.payAmount += 1;
-      remainder--;
-    }
-    return p;
-  });
+  // 3. 余りを配分（最大剰余方式）
+  const sortedByDecimal = [...rawData].sort((a, b) => b.decimalPart - a.decimalPart);
+  const bonusIds = new Set(sortedByDecimal.slice(0, remainder).map(p => p.id));
 
-  return finalResults;
+  // 4. 結果を返す
+  return rawData.map(p => ({
+    ...p,
+    payAmount: p.intVal + (bonusIds.has(p.id) ? 1 : 0)
+  }));
 };
 
 export default function PaymentList() {
-  // ストアから必要なものを取り出す
   const { payments, loading, fetchPayments, moveToHistory } = usePaymentStore();
 
-  // ★画面が表示されたらデータを読み込む
   useEffect(() => {
     fetchPayments();
   }, []);
@@ -43,21 +50,14 @@ export default function PaymentList() {
   };
 
   const handleDownloadCSV = (payment: any) => {
-    // 1. 計算結果を取得
     const splitResults = calculateSplit(payment.totalAmount, payment.participants);
-
-    // 2. CSVのデータを作成（ヘッダー + データ）
     const headers = ["参加者名", "割合(%)", "支払額(円)"];
     const rows = splitResults.map(p => 
       [p.name, p.percentage, p.payAmount].join(",")
     );
     const csvString = [headers.join(","), ...rows].join("\n");
-
-    // 3. 文字化け防止（BOM）をつけてBlobを作る
     const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
     const blob = new Blob([bom, csvString], { type: "text/csv" });
-
-    // 4. ダウンロードリンクを作って勝手にクリックする
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -99,9 +99,7 @@ export default function PaymentList() {
                     </span>
                   </div>
 
-                  <div className="flex gap-2"> {/* ← ボタンを横並びにするために div で囲むと綺麗です */}
-                    
-                    {/* ★追加：CSVダウンロードボタン */}
+                  <div className="flex gap-2">
                     <button 
                       onClick={() => handleDownloadCSV(payment)}
                       className="text-gray-400 hover:text-blue-500 transition-colors p-2"
@@ -109,8 +107,6 @@ export default function PaymentList() {
                     >
                       <BsDownload size={24} />
                     </button>
-
-                    {/* 既存の完了ボタン */}
                     <button 
                       onClick={() => handleComplete(payment.id, payment.title)}
                       className="text-gray-400 hover:text-emerald-500 transition-colors p-2"
@@ -118,14 +114,14 @@ export default function PaymentList() {
                     >
                       <BsCheckCircleFill size={24} />
                     </button>
-                    
                   </div>
                 </div>
 
                 <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1">
                   {splitResults.map((p) => (
                     <div key={p.id} className="flex justify-between text-gray-700">
-                      <span>{p.name} ({p.percentage}%)</span>
+                      {/* ★ここを修正： Math.round() で整数表示にする */}
+                      <span>{p.name} ({Math.round(p.percentage)}%)</span>
                       <span className="font-medium">¥{p.payAmount.toLocaleString()}</span>
                     </div>
                   ))}

@@ -5,9 +5,10 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import About from "./pages/PaymentCompleted";
 import DetailSettings from "./pages/DetailSettings";
-import Incomplete from "./pages/Incomplete"; 
+// import Incomplete from "./pages/Incomplete"; 
 import PaymentError from "./pages/PaymentError";
 import History from "./pages/History"; 
+import Notifications from './pages/notifications';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -17,7 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/about" element={<About />} />
         <Route path="/detail-settings" element={<DetailSettings />} />
         <Route path="/history" element={<History />} />
-        <Route path="/notifications" element={<Incomplete />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/error" element={<PaymentError />} />
       </Routes>
     </BrowserRouter>
