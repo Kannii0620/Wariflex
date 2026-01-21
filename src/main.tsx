@@ -8,7 +8,7 @@ import DetailSettings from "./pages/DetailSettings";
 // import Incomplete from "./pages/Incomplete"; 
 import PaymentError from "./pages/PaymentError";
 import History from "./pages/History"; 
-import Notifications from './pages/notifications';
+import Notifications from './pages/Notifications';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

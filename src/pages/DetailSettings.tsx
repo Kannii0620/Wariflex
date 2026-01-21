@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { BsFillTrash3Fill } from "react-icons/bs";
@@ -51,15 +51,6 @@ export default function DetailSettings() {
       ...p,
       percentage: base + (i < remainder ? 1 : 0)
     }));
-  };
-
-  // モード切替 & 均等計算
-  const handleModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newMode = e.target.value;
-    setSplitMode(newMode);
-    if (newMode === 'even') {
-      setParticipants(prev => calcEvenSplit(prev));
-    }
   };
 
   // パーセントを変更する処理（スライダーや％入力から呼ばれる）
