@@ -1,6 +1,7 @@
 # Wariflex
 
-![WariFlex Banner](./banner.png)
+![WariFlex Banner](public/banner.png)
+![WariFlex Banner](public/subBanner.png)
 
 # 概要
 
