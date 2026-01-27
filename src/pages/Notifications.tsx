@@ -7,20 +7,27 @@ export default function Notifications() {
   const notifications = [
     {
       id: 1,
+      date: '2026/01/27',
+      title: '登録完了画面を修正！',
+      category: 'update', // update, info, bugfix
+      content: '登録完了画面に修正を加えました。これでアニメーションが走り、ちょっと豪華になりました。'
+    },
+    {
+      id: 2,
       date: '2026/01/20',
       title: '履歴機能＆CSV出力を追加！',
       category: 'update', // update, info, bugfix
       content: '精算した履歴を保存できるようになりました。CSVでダウンロードも可能です。'
     },
     {
-      id: 2,
+      id: 3,
       date: '2026/01/20',
       title: '計算ロジックを改善しました',
       category: 'bugfix',
       content: '「3円が4円になる」などの端数計算の誤差が出ないように、計算システムを「最大剰余方式」にアップデートしました。'
     },
     {
-      id: 3,
+      id: 4,
       date: '2026/01/15',
       title: 'WariFlex リリース！',
       category: 'info',

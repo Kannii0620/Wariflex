@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import About from "./pages/PaymentCompleted";
+import PaymentCompleted from "./pages/PaymentCompleted";
 import DetailSettings from "./pages/DetailSettings";
 // import Incomplete from "./pages/Incomplete"; 
 import PaymentError from "./pages/PaymentError";
@@ -15,7 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/about" element={<About />} />
+        <Route path="/completed" element={<PaymentCompleted />} />
         <Route path="/detail-settings" element={<DetailSettings />} />
         <Route path="/history" element={<History />} />
         <Route path="/notifications" element={<Notifications />} />
