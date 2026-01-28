@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
-import { BsSearch, BsPersonPlusFill, BsTrash, BsPersonCheckFill } from "react-icons/bs";
+import { BsSearch, BsPersonPlusFill, BsTrash, BsPersonCheckFill, BsInfoCircle } from "react-icons/bs"; // ← ★アイコン追加
 import { usePaymentStore } from '../store';
+import { Link } from 'react-router-dom'; // ← ★Linkコンポーネント追加
 
 export default function DetailSettings() {
   const { friends, fetchFriends, addFriend, deleteFriend } = usePaymentStore();
@@ -81,6 +82,14 @@ export default function DetailSettings() {
                 </div>
               ))
             )}
+          </div>
+
+          {/* ★ここに追加：アプリについてのリンク */}
+          <div className="mt-10 pt-6 border-t border-white/10 text-center">
+            <Link to="/guide" className="inline-flex items-center gap-2 text-sm text-blue-200 hover:text-white transition-colors">
+              <BsInfoCircle />
+              このアプリについて
+            </Link>
           </div>
 
         </div>
