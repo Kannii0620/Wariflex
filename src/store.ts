@@ -126,13 +126,12 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     }
   },
 
-  // 3. ★通知取得 (自分宛ての請求)
+  // 3. ★通知取得 (自分宛ての請求) - 修正版
   fetchNotifications: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // participantsテーブルから「自分が指定されていて、まだpendingのもの」を取得
-    // 親のpayments情報と、請求者(user_id)のプロフィールも一緒に取ってくる
+    // ① まず「請求データ」と「支払い情報（作成者のID含む）」を取得
     const { data, error } = await supabase
       .from('participants')
       .select(`
@@ -142,24 +141,47 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
           title,
           total_amount,
           created_at,
-          profiles ( display_name )
+          user_id
         )
       `)
       .eq('linked_user_id', user.id)
       .eq('status', 'pending');
 
     if (error) { console.error("Notification error:", error); return; }
+    if (!data || data.length === 0) { set({ notifications: [] }); return; }
 
+    // ② 支払い作成者のIDを集める（重複なし）
+    // @ts-ignore
+    const userIds = [...new Set(data.map((item: any) => item.payments?.user_id).filter(Boolean))];
+
+    // ③ プロフィール情報を別便で取ってくる
+    let profilesMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, display_name')
+        .in('id', userIds);
+      
+      if (profilesData) {
+        profilesData.forEach((p) => {
+          profilesMap[p.id] = p.display_name;
+        });
+      }
+    }
+
+    // ④ 合体させる
     const notifs: NotificationItem[] = data.map((item: any) => {
-      // 支払い額の計算 (合計 * % / 100)
       const total = item.payments.total_amount;
       const amount = Math.floor(total * item.percentage / 100);
+      const payerId = item.payments.user_id;
+      // プロフィールがあれば名前を、なければ「不明」を表示
+      const payerName = profilesMap[payerId] || "不明なユーザー";
 
       return {
         id: item.id,
         payment_title: item.payments.title,
         amount_to_pay: amount,
-        payer_name: item.payments.profiles?.display_name || "名無し",
+        payer_name: payerName,
         created_at: item.payments.created_at
       };
     });
