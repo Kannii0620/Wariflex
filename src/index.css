@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+@supports (padding-top: env(safe-area-inset-top)) {
+  #root {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    min-height: 100vh; /* 画面いっぱいに広げる */
+    background-color: #ffffff; /* 背景色（必要なら変えてね） */
+  }
+
+  /* 固定ヘッダーを使っている場合、そこにも余白が必要かも */
+  /* もしヘッダーが崩れてたら教えてください！まずは上の#rootだけで試してOK */
+}
+
 :root {
   --font-sans: "Noto Sans JP", sans-serif;
   line-height: 1.5;

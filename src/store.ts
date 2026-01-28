@@ -138,11 +138,11 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       .select(`
         id,
         percentage,
-        payments:payment_id (
+        payments (
           title,
           total_amount,
           created_at,
-          profiles:user_id ( display_name )
+          profiles ( display_name )
         )
       `)
       .eq('linked_user_id', user.id)
