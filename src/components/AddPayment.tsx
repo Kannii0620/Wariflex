@@ -5,12 +5,12 @@ import { BsPersonFill, BsXCircle, BsCurrencyYen, BsCalculator, BsCheckCircle } f
 
 export default function AddPayment() {
   const { addPayment, friends, fetchFriends } = usePaymentStore();
-  
+
   // 基本フォーム
   const [amount, setAmount] = useState('');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  
+
   // 参加者
   const [selectedFriends, setSelectedFriends] = useState<Friend[]>([]);
   const [manualParticipants, setManualParticipants] = useState<string[]>([]);
@@ -18,7 +18,7 @@ export default function AddPayment() {
 
   // モード管理 ('even'=均等, 'amount'=金額, 'percent'=割合)
   const [splitMode, setSplitMode] = useState<'even' | 'amount' | 'percent'>('even');
-  
+
   // 個別入力値 (ID -> 値の文字列)
   const [customAmounts, setCustomAmounts] = useState<{ [key: string]: string }>({});
   const [customPercents, setCustomPercents] = useState<{ [key: string]: string }>({});
@@ -130,7 +130,7 @@ export default function AddPayment() {
     }
 
     const members = getAllMembers();
-    
+
     // 型定義を追加
     const allParticipants: { name: string; percentage: number; linked_user_id?: string }[] = [];
 
@@ -147,9 +147,9 @@ export default function AddPayment() {
     // データ作成
     members.forEach(m => {
       let percentage = 0;
-      
+
       if (splitMode === 'even') {
-        percentage = 100 / members.length; 
+        percentage = 100 / members.length;
       } else if (splitMode === 'amount') {
         percentage = (Number(customAmounts[m.id] || 0) / numAmount) * 100;
       } else if (splitMode === 'percent') {
@@ -168,12 +168,12 @@ export default function AddPayment() {
 
     // 均等の場合の端数処理補正
     if (splitMode === 'even') {
-        const count = members.length;
-        const per = Math.floor(100 / count);
-        const remainder = 100 % count;
-        allParticipants.forEach((p, i) => {
-            p.percentage = per + (i < remainder ? 1 : 0);
-        });
+      const count = members.length;
+      const per = Math.floor(100 / count);
+      const remainder = 100 % count;
+      allParticipants.forEach((p, i) => {
+        p.percentage = per + (i < remainder ? 1 : 0);
+      });
     }
 
     await addPayment(title, numAmount, allParticipants, message);
@@ -220,15 +220,15 @@ export default function AddPayment() {
 
   return (
     <div className="bg-lime-200/90 backdrop-blur-sm text-gray-800 p-6 rounded-3xl shadow-xl border border-white/40 transition-all duration-300">
-      
+
       {/* 金額入力 */}
       <div className="mb-4">
         <label className="block text-sm font-bold text-gray-600 mb-1">支払い金額</label>
         <div className="relative">
           <BsCurrencyYen className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl" />
-          <input 
-            type="number" 
-            placeholder="0" 
+          <input
+            type="number"
+            placeholder="0"
             className="w-full pl-10 pr-4 py-3 bg-white/80 rounded-xl border-none focus:ring-2 focus:ring-emerald-500 text-2xl font-bold text-gray-800 placeholder-gray-300 shadow-inner"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
@@ -242,9 +242,9 @@ export default function AddPayment() {
           {/* タイトル */}
           <div>
             <label className="block text-sm font-bold text-gray-600 mb-1">何の支払い？</label>
-            <input 
-              type="text" 
-              placeholder="例: 焼肉、タクシー代" 
+            <input
+              type="text"
+              placeholder="例: 焼肉、タクシー代"
               className="w-full px-4 py-2 bg-white/80 rounded-xl border-none focus:ring-2 focus:ring-emerald-500 shadow-inner"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -261,9 +261,8 @@ export default function AddPayment() {
                   <button
                     key={friend.friend_id}
                     onClick={() => toggleFriend(friend)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1 transition-all border ${
-                      isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white/50 text-gray-600 border-transparent'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-sm font-bold flex items-center gap-1 transition-all border ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white/50 text-gray-600 border-transparent'
+                      }`}
                   >
                     {isSelected && <BsPersonFill />}
                     {friend.display_name}
@@ -271,10 +270,10 @@ export default function AddPayment() {
                 );
               })}
             </div>
-            
+
             <div className="flex gap-2 mb-3">
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="リストにない人"
                 className="flex-1 px-3 py-2 bg-white/60 rounded-lg text-sm border-none shadow-inner"
                 value={manualNameInput}
@@ -282,7 +281,7 @@ export default function AddPayment() {
               />
               <button onClick={addManualParticipant} className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-1 rounded-lg text-sm font-bold">追加</button>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mb-4">
               <span className="px-2 py-1 rounded-md bg-gray-600 text-white text-xs font-bold">自分</span>
               {selectedFriends.map(f => (
@@ -299,19 +298,19 @@ export default function AddPayment() {
 
           {/* ★モード切替タブ */}
           <div className="bg-white/40 p-1 rounded-xl flex mb-2 shadow-inner">
-            <button 
+            <button
               onClick={() => changeMode('even')}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${splitMode === 'even' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-white/20'}`}
             >
               均等
             </button>
-            <button 
+            <button
               onClick={() => changeMode('amount')}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${splitMode === 'amount' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-white/20'}`}
             >
               金額 (円)
             </button>
-            <button 
+            <button
               onClick={() => changeMode('percent')}
               className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${splitMode === 'percent' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:bg-white/20'}`}
             >
@@ -321,43 +320,64 @@ export default function AddPayment() {
 
           {/* ★個別入力エリア (金額 or 割合) */}
           {splitMode !== 'even' && (
-            <div className="bg-white/40 p-4 rounded-xl space-y-3 animate-fade-in">
+            <div className="bg-white/40 p-4 rounded-xl space-y-4 animate-fade-in">
               <div className="flex justify-between items-center text-xs font-bold text-gray-600 border-b border-gray-300/50 pb-2">
                 <span>メンバー</span>
                 <span>{splitMode === 'amount' ? '負担額 (円)' : '負担割合 (%)'}</span>
               </div>
-              
+
               {getAllMembers().map((member) => (
-                <div key={member.id} className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-bold text-gray-700 truncate w-1/3">{member.name}</span>
-                  <div className="relative flex-1">
-                    {/* ★修正箇所: pl-3 pr-8 で右側に余白を作り、単位を right-3 に寄せました */}
-                    <input
-                      type="number"
-                      value={splitMode === 'amount' ? (customAmounts[member.id] || '') : (customPercents[member.id] || '')}
-                      onChange={(e) => splitMode === 'amount' ? handleAmountChange(member.id, e.target.value) : handlePercentChange(member.id, e.target.value)}
-                      className="w-full pl-3 pr-8 py-2 text-right bg-white rounded-lg border-none focus:ring-2 focus:ring-blue-500 font-mono font-bold"
-                      placeholder="0"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
-                      {splitMode === 'amount' ? '円' : '%'}
-                    </span>
+                <div key={member.id} className="space-y-2 border-b border-white/20 pb-3 last:border-none">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-bold text-gray-700 truncate w-1/3">{member.name}</span>
+
+                    <div className="relative flex-1">
+                      <input
+                        type="number"
+                        value={splitMode === 'amount' ? (customAmounts[member.id] || '') : (customPercents[member.id] || '')}
+                        onChange={(e) => splitMode === 'amount' ? handleAmountChange(member.id, e.target.value) : handlePercentChange(member.id, e.target.value)}
+                        className="w-full pl-3 pr-8 py-2 text-right bg-white rounded-lg border-none focus:ring-2 focus:ring-blue-500 font-mono font-bold"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
+                        {splitMode === 'amount' ? '円' : '%'}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => splitMode === 'amount' ? fillRemAmount(member.id) : fillRemPercent(member.id)}
+                      className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"
+                      title="残りをこの人に追加"
+                    >
+                      <BsCalculator />
+                    </button>
                   </div>
-                  {/* 残り埋めボタン */}
-                  <button 
-                    onClick={() => splitMode === 'amount' ? fillRemAmount(member.id) : fillRemPercent(member.id)}
-                    className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"
-                    title="残りをこの人に追加"
-                  >
-                    <BsCalculator />
-                  </button>
+
+                  {/* ★割合モードの時だけスライダーと目安金額を表示 */}
+                  {splitMode === 'percent' && (
+                    <div className="px-1">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value={customPercents[member.id] || 0}
+                        onChange={(e) => handlePercentChange(member.id, e.target.value)}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <div className="flex justify-end mt-1">
+                        <span className="text-[10px] text-gray-500 font-bold">
+                          目安: ¥{Math.floor(Number(amount) * (Number(customPercents[member.id] || 0) / 100)).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 
               {/* 合計チェック */}
-              <div className={`mt-3 p-2 rounded-lg text-center font-bold text-sm flex justify-center items-center gap-2 ${
-                (splitMode === 'amount' ? getRemainingAmount() : getRemainingPercent()) === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-              }`}>
+              <div className={`mt-3 p-2 rounded-lg text-center font-bold text-sm flex justify-center items-center gap-2 ${(splitMode === 'amount' ? getRemainingAmount() : getRemainingPercent()) === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                }`}>
                 {(splitMode === 'amount' ? getRemainingAmount() : getRemainingPercent()) === 0 ? (
                   <><BsCheckCircle /> OK!</>
                 ) : (
@@ -366,26 +386,34 @@ export default function AddPayment() {
               </div>
             </div>
           )}
-
-          {/* 登録ボタン */}
-          <div className="pt-2">
-            <AnimatedButton
-              onClick={handleAddPayment}
-              className={`w-full py-3 text-lg shadow-lg ${
-                (splitMode === 'amount' && getRemainingAmount() !== 0) || (splitMode === 'percent' && getRemainingPercent() !== 0)
-                  ? 'bg-gray-400 cursor-not-allowed opacity-50' 
-                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
-              }`}
-            >
-              割り勘を作成
-            </AnimatedButton>
-            
-            <button onClick={() => setIsExpanded(false)} className="w-full mt-3 text-gray-500 text-sm font-bold hover:text-gray-700 py-2">
-              閉じる
-            </button>
+          {/* 合計チェック */}
+          <div className={`mt-3 p-2 rounded-lg text-center font-bold text-sm flex justify-center items-center gap-2 ${(splitMode === 'amount' ? getRemainingAmount() : getRemainingPercent()) === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+            }`}>
+            {(splitMode === 'amount' ? getRemainingAmount() : getRemainingPercent()) === 0 ? (
+              <><BsCheckCircle /> OK!</>
+            ) : (
+              <>あと {splitMode === 'amount' ? `${getRemainingAmount()} 円` : `${getRemainingPercent()} %`}</>
+            )}
           </div>
         </div>
       )}
+
+      {/* 登録ボタン */}
+      <div className="pt-2">
+        <AnimatedButton
+          onClick={handleAddPayment}
+          className={`w-full py-3 text-lg shadow-lg ${(splitMode === 'amount' && getRemainingAmount() !== 0) || (splitMode === 'percent' && getRemainingPercent() !== 0)
+              ? 'bg-gray-400 cursor-not-allowed opacity-50'
+              : 'bg-emerald-600 text-white hover:bg-emerald-700'
+            }`}
+        >
+          割り勘を作成
+        </AnimatedButton>
+
+        <button onClick={() => setIsExpanded(false)} className="w-full mt-3 text-gray-500 text-sm font-bold hover:text-gray-700 py-2">
+          閉じる
+        </button>
+      </div>
     </div>
-  );
+  )
 }
