@@ -10,3 +10,5 @@ if (!supabaseUrl || !supabaseKey) {
 
 // クライアントを作成してエクスポート
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+(window as any).supabase = supabase;
