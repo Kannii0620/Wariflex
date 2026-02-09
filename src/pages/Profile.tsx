@@ -71,6 +71,37 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const confirmed = confirm("本当にアカウントを削除しますか？\nこの操作は取り消せません。\nすべてのデータが完全に削除されます。");
+    if (!confirmed) return;
+
+    // 二重確認（誤操作防止）
+    const doubleCheck = prompt("削除を確認するため、あなたのメールアドレスを入力してください");
+    
+    // 現在のユーザー情報を取得して確認
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (doubleCheck !== user?.email) {
+      alert("メールアドレスが一致しません。");
+      return;
+    }
+
+    try {
+      // SQLで作った関数(delete_own_account)を呼び出す
+      const { error } = await supabase.rpc('delete_own_account');
+      
+      if (error) throw error;
+
+      alert("アカウントを削除しました。ご利用ありがとうございました。");
+      await supabase.auth.signOut();
+      navigate("/");
+      
+    } catch (err: any) {
+      console.error(err);
+      alert("削除に失敗しました: " + err.message);
+    }
+  };
+
   // ★ パスワード変更処理（セキュリティ強化版）
   const handlePasswordChange = async () => {
     setPasswordMessage(null);
@@ -241,6 +272,14 @@ export default function Profile() {
             <BsBoxArrowRight size={20} />
             ログアウト
           </button>
+          <div className="mt-8 text-center border-t border-white/10 pt-6">
+            <button 
+              onClick={handleDeleteAccount}
+              className="text-rose-400 text-sm hover:text-rose-200 underline decoration-rose-400/50 hover:decoration-rose-200 transition-all"
+            >
+              アカウントを完全に削除する
+            </button>
+        </div>
         </div>
 
         <BottomNav />
