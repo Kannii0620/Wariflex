@@ -13,7 +13,13 @@ export default function Notifications() {
 
   const handleApprove = async (id: string) => {
     if (confirm("この請求を承認しますか？")) {
+      // 1. まずDBを更新する
       await respondToRequest(id, 'approved');
+      
+      // 2. ★ここで fetchNotifications() を呼ばない！
+      // 代わりに store.ts 側の respondToRequest 内で 
+      // notifications 配列からそのIDを filter で消すようにする。
+      
       alert("承認しました！");
     }
   };

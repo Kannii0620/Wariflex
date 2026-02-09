@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 
 // 参加者型
 export type Participant = {
-  id: string; 
+  id: string;
   name: string;
   percentage: number;
   linked_user_id?: string;
@@ -51,9 +51,9 @@ type PaymentState = {
 
   addFriend: (targetUsername: string) => Promise<{ success: boolean; message: string }>;
   addPayment: (title: string, amount: number, participants: { name: string; percentage: number; linked_user_id?: string }[], message: string) => Promise<void>;
-  
+
   respondToRequest: (id: string, response: 'approved' | 'rejected') => Promise<void>; // ★追加
-  
+
   moveToHistory: (id: string) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
   deleteHistoryItem: (id: string) => Promise<void>;
@@ -89,12 +89,12 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     const formattedPayments: Payment[] = paymentsData.map((p) => {
       const relatedParticipants = participantsData
         ? participantsData.filter((part) => part.payment_id === p.id).map((part) => ({
-              id: part.id,
-              name: part.name,
-              percentage: part.percentage,
-              linked_user_id: part.linked_user_id,
-              status: part.status,
-            }))
+          id: part.id,
+          name: part.name,
+          percentage: part.percentage,
+          linked_user_id: part.linked_user_id,
+          status: part.status,
+        }))
         : [];
 
       return {
@@ -161,7 +161,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
         .from('profiles')
         .select('id, display_name')
         .in('id', userIds);
-      
+
       if (profilesData) {
         profilesData.forEach((p) => {
           profilesMap[p.id] = p.display_name;
@@ -171,18 +171,32 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
     // ④ 合体させる
     const notifs: NotificationItem[] = data.map((item: any) => {
-      const total = item.payments.total_amount;
+      // 安全にアクセスするために一旦変数に入れる
+      const p = item.payments;
+
+      // もしRLSのせいで payments が null なら、空のデータを返してクラッシュを防ぐ
+      if (!p) {
+        return {
+          id: item.id,
+          payment_title: "詳細権限なし",
+          amount_to_pay: 0,
+          payer_name: "不明",
+          created_at: new Date().toISOString()
+        };
+      }
+
+      // ここからは p (payments) が確実に存在する場合の処理
+      const total = p.total_amount ?? 0;
       const amount = Math.floor(total * item.percentage / 100);
-      const payerId = item.payments.user_id;
-      // プロフィールがあれば名前を、なければ「不明」を表示
+      const payerId = p.user_id;
       const payerName = profilesMap[payerId] || "不明なユーザー";
 
       return {
         id: item.id,
-        payment_title: item.payments.title,
+        payment_title: p.title || "無題の支払い",
         amount_to_pay: amount,
         payer_name: payerName,
-        created_at: item.payments.created_at
+        created_at: p.created_at
       };
     });
 
@@ -190,9 +204,24 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   },
 
   // 4. ★承認/拒否アクション
-  respondToRequest: async (id, response) => {
-    await supabase.from('participants').update({ status: response }).eq('id', id);
-    get().fetchNotifications(); // リスト更新
+  respondToRequest: async (id: string, status: string) => {
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ status: status })
+      .eq('id', id)
+      .select();
+
+    if (error) {
+      console.error("更新エラー:", error);
+      return;
+    }
+
+    // ✅ 更新が成功（dataが空でない）した場合のみ、フロントのリストから削除
+    if (data && data.length > 0) {
+      set((state) => ({
+        notifications: state.notifications.filter((n) => n.id !== id)
+      }));
+    }
   },
 
   // 他の機能 (addFriend, addPaymentなど)
@@ -211,15 +240,38 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   addPayment: async (title, amount, participants, message) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: paymentData } = await supabase.from('payments').insert([{ title, total_amount: amount, status: 'active', message }]).select().single();
+
+    // 1. 参加者全員のIDを抽出して配列にする (nullを除外)
+    const participantIds = participants
+      .map(p => p.linked_user_id)
+      .filter((id): id is string => !!id);
+
+    // 2. paymentsテーブルに保存 (participant_ids を追加！)
+    const { data: paymentData } = await supabase
+      .from('payments')
+      .insert([{ 
+        title, 
+        total_amount: amount, 
+        status: 'active', 
+        message,
+        user_id: user.id, // 作成者IDも明示的に入れると確実
+        participant_ids: participantIds // 👈 これがループ回避の鍵！
+      }])
+      .select()
+      .single();
+
     if (!paymentData) return;
+
+    // 3. participantsテーブル（子）への保存
     const participantsToInsert = participants.map((p) => ({
       payment_id: paymentData.id,
       name: p.name,
       percentage: p.percentage,
       linked_user_id: p.linked_user_id || null,
-      status: p.linked_user_id ? 'pending' : 'approved'
+      status: p.linked_user_id ? 'pending' : 'approved',
+      owner_id: user.id // 👈 SQLで追加したowner_idもここで入れる！
     }));
+
     await supabase.from('participants').insert(participantsToInsert);
     get().fetchPayments();
   },
@@ -228,10 +280,10 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   deletePayment: async (id) => { await supabase.from('payments').delete().eq('id', id); get().fetchPayments(); },
   deleteHistoryItem: async (id) => { await supabase.from('payments').delete().eq('id', id); get().fetchPayments(); },
   clearHistory: async () => { await supabase.from('payments').delete().eq('status', 'history'); get().fetchPayments(); },
-  deleteFriend: async (friend_id) => { 
+  deleteFriend: async (friend_id) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     await supabase.from('friends').delete().eq('user_id', user.id).eq('friend_id', friend_id);
-    get().fetchFriends(); 
+    get().fetchFriends();
   }
 }));

