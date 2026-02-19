@@ -10,7 +10,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ username: string, display_name: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  
+
   // プロフィール編集用
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState("");
@@ -77,10 +77,10 @@ export default function Profile() {
 
     // 二重確認（誤操作防止）
     const doubleCheck = prompt("削除を確認するため、あなたのメールアドレスを入力してください");
-    
+
     // 現在のユーザー情報を取得して確認
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (doubleCheck !== user?.email) {
       alert("メールアドレスが一致しません。");
       return;
@@ -89,13 +89,13 @@ export default function Profile() {
     try {
       // SQLで作った関数(delete_own_account)を呼び出す
       const { error } = await supabase.rpc('delete_own_account');
-      
+
       if (error) throw error;
 
       alert("アカウントを削除しました。ご利用ありがとうございました。");
       await supabase.auth.signOut();
       navigate("/");
-      
+
     } catch (err: any) {
       console.error(err);
       alert("削除に失敗しました: " + err.message);
@@ -125,7 +125,12 @@ export default function Profile() {
       });
 
       if (signInError) {
-        setPasswordMessage({ text: "現在のパスワードが間違っています", type: 'error' });
+        // 基本情報的には「ボかす」のが正解だけど、ここはログイン後画面。
+        // ユーザーが「あ、パスワード打ち間違えたな」と気づけるようにハッキリ書く！
+        setPasswordMessage({ 
+          text: "現在のIDまたはパスワードが正しくありません。入力内容を確認してください。", 
+          type: 'error' 
+        });
         return;
       }
 
@@ -164,18 +169,18 @@ export default function Profile() {
         <Header />
 
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl animate-fade-in-up space-y-8">
-          
+
           {/* プロフィール情報セクション */}
           <div>
             <div className="flex flex-col items-center mb-6">
               <div className="bg-white text-blue-500 rounded-full p-4 mb-4 shadow-lg">
                 <BsPersonCircle size={64} />
               </div>
-              
+
               {isEditing ? (
                 <div className="flex gap-2 w-full max-w-xs">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     className="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-1 text-center font-bold focus:outline-none focus:bg-white/30"
@@ -202,7 +207,7 @@ export default function Profile() {
                   <code className="text-xl font-mono font-bold tracking-wider">
                     {profile?.username || "Loading..."}
                   </code>
-                  <button 
+                  <button
                     onClick={copyToClipboard}
                     className={`p-2 rounded-lg transition-all flex items-center gap-2 text-sm font-bold ${copied ? 'bg-emerald-500 text-white' : 'bg-white text-blue-600 hover:bg-blue-50'}`}
                   >
@@ -216,7 +221,7 @@ export default function Profile() {
 
           {/* ★ パスワード変更セクション (新規追加) */}
           <div className="border-t border-white/10 pt-6">
-            <button 
+            <button
               onClick={() => setIsChangingPassword(!isChangingPassword)}
               className="flex items-center gap-2 text-white font-bold mb-4 hover:text-blue-200 transition-colors w-full"
             >
@@ -229,8 +234,8 @@ export default function Profile() {
               <div className="bg-black/20 p-4 rounded-xl space-y-3 animate-fade-in">
                 <div>
                   <label className="text-xs text-blue-200 block mb-1">現在のパスワード</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
@@ -239,22 +244,22 @@ export default function Profile() {
                 </div>
                 <div>
                   <label className="text-xs text-blue-200 block mb-1">新しいパスワード</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
                     placeholder="6文字以上"
                   />
                 </div>
-                
+
                 {passwordMessage && (
                   <p className={`text-sm font-bold text-center ${passwordMessage.type === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
                     {passwordMessage.text}
                   </p>
                 )}
 
-                <button 
+                <button
                   onClick={handlePasswordChange}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors mt-2"
                 >
@@ -265,7 +270,7 @@ export default function Profile() {
           </div>
 
           {/* ログアウトボタン */}
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full bg-rose-500/80 hover:bg-rose-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
           >
@@ -273,13 +278,13 @@ export default function Profile() {
             ログアウト
           </button>
           <div className="mt-8 text-center border-t border-white/10 pt-6">
-            <button 
+            <button
               onClick={handleDeleteAccount}
               className="text-rose-400 text-sm hover:text-rose-200 underline decoration-rose-400/50 hover:decoration-rose-200 transition-all"
             >
               アカウントを完全に削除する
             </button>
-        </div>
+          </div>
         </div>
 
         <BottomNav />

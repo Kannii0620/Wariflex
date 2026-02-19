@@ -241,26 +241,29 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // 1. 参加者全員のIDを抽出して配列にする (nullを除外)
+    // 1. 参加者全員のIDを抽出
     const participantIds = participants
       .map(p => p.linked_user_id)
       .filter((id): id is string => !!id);
 
-    // 2. paymentsテーブルに保存 (participant_ids を追加！)
-    const { data: paymentData } = await supabase
+    // 2. paymentsテーブルに保存
+    // DB側で DEFAULT auth.uid() を設定したので、実は user_id は書かなくても自動で入ります！
+    const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
       .insert([{ 
         title, 
         total_amount: amount, 
         status: 'active', 
         message,
-        user_id: user.id, // 作成者IDも明示的に入れると確実
-        participant_ids: participantIds // 👈 これがループ回避の鍵！
+        participant_ids: participantIds
       }])
       .select()
       .single();
 
-    if (!paymentData) return;
+    if (paymentError || !paymentData) {
+      console.error('Payment保存失敗:', paymentError);
+      return;
+    }
 
     // 3. participantsテーブル（子）への保存
     const participantsToInsert = participants.map((p) => ({
@@ -269,10 +272,18 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       percentage: p.percentage,
       linked_user_id: p.linked_user_id || null,
       status: p.linked_user_id ? 'pending' : 'approved',
-      owner_id: user.id // 👈 SQLで追加したowner_idもここで入れる！
+      // 👇 ここ重要！SQLで追加したのが "user_id" ならここを user_id にします
+      user_id: user.id 
     }));
 
-    await supabase.from('participants').insert(participantsToInsert);
+    const { error: partError } = await supabase
+      .from('participants')
+      .insert(participantsToInsert);
+
+    if (partError) {
+      console.error('Participants保存失敗:', partError);
+    }
+
     get().fetchPayments();
   },
 
