@@ -109,8 +109,8 @@ export default function Profile() {
       setPasswordMessage({ text: "すべての項目を入力してください", type: 'error' });
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordMessage({ text: "新しいパスワードは6文字以上にしてください", type: 'error' });
+    if (newPassword.length < 8) {
+      setPasswordMessage({ text: "新しいパスワードは8文字以上にしてください", type: 'error' });
       return;
     }
 
@@ -243,13 +243,13 @@ export default function Profile() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-blue-200 block mb-1">新しいパスワード</label>
+                  <label className="text-xs text-blue-200 block mb-1">新しいパスワード※大文字小文字、数字を含めてください。</label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
-                    placeholder="6文字以上"
+                    placeholder="8文字以上"
                   />
                 </div>
 
