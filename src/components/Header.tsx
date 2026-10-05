@@ -1,16 +1,16 @@
-import { useEffect } from 'react'; // 追加
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BsBellFill, BsPersonCircle } from "react-icons/bs";
 import logo from './WariFlex_Logo.png';
-import { usePaymentStore } from '../store'; // 追加
+import { usePaymentStore } from '../store';
 
 export default function Header() {
-  const { notifications, fetchNotifications } = usePaymentStore(); // 追加
+  const { notifications, fetchNotifications } = usePaymentStore();
 
-  // 追加: コンポーネント表示時に通知数をチェック
+  // コンポーネント表示時に通知数をチェック
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
   return (
     <header className="flex justify-between items-center mb-6">
@@ -29,7 +29,7 @@ export default function Header() {
         >
           <BsBellFill size={20} />
           
-          {/* ★未読バッジ: 通知が1件以上あれば表示 */}
+          {/* 未読バッジ: 通知が1件以上あれば表示 */}
           {notifications.length > 0 && (
             <span className="absolute top-0 right-0 block h-3 w-3 rounded-full ring-2 ring-blue-600 bg-rose-500 transform translate-x-1/4 -translate-y-1/4 animate-pulse"></span>
           )}

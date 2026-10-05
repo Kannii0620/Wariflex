@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-export default function Home() {
+export default function Incomplete() {
   return (
     <div className="min-h-screen bg-linear-to-b from-sky-400 to-blue-800">
       <div className="max-w-md mx-auto p-8"> 

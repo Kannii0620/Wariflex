@@ -29,7 +29,7 @@ export type Friend = {
   display_name: string;
 };
 
-// ★通知型 (新規追加)
+// 通知型
 export type NotificationItem = {
   id: string; // participantのID
   payment_title: string;
@@ -38,28 +38,88 @@ export type NotificationItem = {
   created_at: string;
 };
 
+// 支払い登録時の参加者入力
+export type NewParticipant = {
+  name: string;
+  percentage: number;
+  linked_user_id?: string;
+};
+
+// --- DBの行の型 ---
+type ParticipantRow = {
+  id: string;
+  name: string;
+  percentage: number;
+  linked_user_id: string | null;
+  status: string | null;
+};
+
+type PaymentRow = {
+  id: string;
+  title: string;
+  total_amount: number;
+  status: Payment['status'];
+  message: string | null;
+  created_at: string | null;
+  completed_at: string | null;
+  participants: ParticipantRow[] | null;
+};
+
+type FriendRow = {
+  friend_id: string;
+  profiles: { username: string; display_name: string };
+};
+
+type NotificationRow = {
+  id: string;
+  percentage: number;
+  // RLSで支払いが見えない場合は null になる
+  payments: { title: string | null; total_amount: number | null; created_at: string; user_id: string } | null;
+};
+
 type PaymentState = {
   payments: Payment[];
   history: Payment[];
   friends: Friend[];
-  notifications: NotificationItem[]; // ★追加
+  notifications: NotificationItem[];
   loading: boolean;
 
   fetchPayments: () => Promise<void>;
   fetchFriends: () => Promise<void>;
-  fetchNotifications: () => Promise<void>; // ★追加
+  fetchNotifications: () => Promise<void>;
 
   addFriend: (targetUsername: string) => Promise<{ success: boolean; message: string }>;
-  addPayment: (title: string, amount: number, participants: { name: string; percentage: number; linked_user_id?: string }[], message: string) => Promise<void>;
+  addPayment: (title: string, amount: number, participants: NewParticipant[], message: string) => Promise<boolean>;
 
-  respondToRequest: (id: string, response: 'approved' | 'rejected') => Promise<void>; // ★追加
+  respondToRequest: (id: string, response: 'approved' | 'rejected') => Promise<void>;
 
   moveToHistory: (id: string) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
-  deleteHistoryItem: (id: string) => Promise<void>;
   clearHistory: () => Promise<void>;
   deleteFriend: (friend_id: string) => Promise<void>;
 };
+
+const getCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+};
+
+const toPayment = (row: PaymentRow): Payment => ({
+  id: row.id,
+  title: row.title,
+  totalAmount: row.total_amount,
+  participants: (row.participants ?? []).map((part) => ({
+    id: part.id,
+    name: part.name,
+    percentage: part.percentage,
+    linked_user_id: part.linked_user_id ?? undefined,
+    status: part.status ?? undefined,
+  })),
+  completedAt: row.completed_at ? new Date(row.completed_at).toLocaleString() : undefined,
+  status: row.status,
+  message: row.message ?? undefined,
+  date: row.created_at ? new Date(row.created_at).toLocaleDateString() : undefined,
+});
 
 export const usePaymentStore = create<PaymentState>((set, get) => ({
   payments: [],
@@ -68,46 +128,25 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
   notifications: [],
   loading: false,
 
-  // 1. データ取得
+  // 自分の支払い一覧（参加者込み）を取得
   fetchPayments: async () => {
     set({ loading: true });
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) { set({ payments: [], history: [], loading: false }); return; }
 
-    // 自分の支払い
-    const { data: paymentsData } = await supabase
+    const { data, error } = await supabase
       .from('payments')
-      .select('*')
+      .select('*, participants(*)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    // 参加者情報
-    const { data: participantsData } = await supabase.from('participants').select('*');
+    if (error || !data) {
+      if (error) console.error('Payments取得失敗:', error);
+      set({ loading: false });
+      return;
+    }
 
-    if (!paymentsData) { set({ loading: false }); return; }
-
-    const formattedPayments: Payment[] = paymentsData.map((p) => {
-      const relatedParticipants = participantsData
-        ? participantsData.filter((part) => part.payment_id === p.id).map((part) => ({
-          id: part.id,
-          name: part.name,
-          percentage: part.percentage,
-          linked_user_id: part.linked_user_id,
-          status: part.status,
-        }))
-        : [];
-
-      return {
-        id: p.id,
-        title: p.title,
-        totalAmount: p.total_amount,
-        participants: relatedParticipants,
-        completedAt: p.completed_at ? new Date(p.completed_at).toLocaleString() : undefined,
-        status: p.status,
-        message: p.message,
-        date: p.created_at ? new Date(p.created_at).toLocaleDateString() : undefined,
-      };
-    });
+    const formattedPayments = (data as PaymentRow[]).map(toPayment);
 
     set({
       payments: formattedPayments.filter((p) => p.status === 'active'),
@@ -116,98 +155,82 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     });
   },
 
-  // 2. 友達取得
   fetchFriends: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
-    const { data } = await supabase.from('friends').select(`friend_id, profiles:friend_id (username, display_name)`).eq('user_id', user.id);
+    const { data } = await supabase
+      .from('friends')
+      .select('friend_id, profiles:friend_id (username, display_name)')
+      .eq('user_id', user.id);
     if (data) {
-      set({ friends: data.map((item: any) => ({ friend_id: item.friend_id, username: item.profiles.username, display_name: item.profiles.display_name })) });
+      set({
+        friends: (data as unknown as FriendRow[]).map((item) => ({
+          friend_id: item.friend_id,
+          username: item.profiles.username,
+          display_name: item.profiles.display_name,
+        })),
+      });
     }
   },
 
-  // 3. ★通知取得 (自分宛ての請求) - 修正版
+  // 自分宛ての未回答の請求を取得
   fetchNotifications: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
 
-    // ① まず「請求データ」と「支払い情報（作成者のID含む）」を取得
     const { data, error } = await supabase
       .from('participants')
-      .select(`
-        id,
-        percentage,
-        payments (
-          title,
-          total_amount,
-          created_at,
-          user_id
-        )
-      `)
+      .select('id, percentage, payments (title, total_amount, created_at, user_id)')
       .eq('linked_user_id', user.id)
       .eq('status', 'pending');
 
     if (error) { console.error("Notification error:", error); return; }
     if (!data || data.length === 0) { set({ notifications: [] }); return; }
 
-    // ② 支払い作成者のIDを集める（重複なし）
-    // @ts-ignore
-    const userIds = [...new Set(data.map((item: any) => item.payments?.user_id).filter(Boolean))];
+    const rows = data as unknown as NotificationRow[];
 
-    // ③ プロフィール情報を別便で取ってくる
-    let profilesMap: Record<string, string> = {};
-    if (userIds.length > 0) {
+    // 請求者の表示名は profiles から別クエリで引く
+    const payerIds = [...new Set(rows.flatMap((row) => row.payments ? [row.payments.user_id] : []))];
+    const payerNames: Record<string, string> = {};
+    if (payerIds.length > 0) {
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('id, display_name')
-        .in('id', userIds);
+        .in('id', payerIds);
 
-      if (profilesData) {
-        profilesData.forEach((p) => {
-          profilesMap[p.id] = p.display_name;
-        });
-      }
+      (profilesData as { id: string; display_name: string }[] | null)?.forEach((p) => {
+        payerNames[p.id] = p.display_name;
+      });
     }
 
-    // ④ 合体させる
-    const notifs: NotificationItem[] = data.map((item: any) => {
-      // 安全にアクセスするために一旦変数に入れる
-      const p = item.payments;
-
-      // もしRLSのせいで payments が null なら、空のデータを返してクラッシュを防ぐ
-      if (!p) {
+    const notifs: NotificationItem[] = rows.map((row) => {
+      const payment = row.payments;
+      if (!payment) {
         return {
-          id: item.id,
+          id: row.id,
           payment_title: "詳細権限なし",
           amount_to_pay: 0,
           payer_name: "不明",
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
       }
 
-      // ここからは p (payments) が確実に存在する場合の処理
-      const total = p.total_amount ?? 0;
-      const amount = Math.floor(total * item.percentage / 100);
-      const payerId = p.user_id;
-      const payerName = profilesMap[payerId] || "不明なユーザー";
-
       return {
-        id: item.id,
-        payment_title: p.title || "無題の支払い",
-        amount_to_pay: amount,
-        payer_name: payerName,
-        created_at: p.created_at
+        id: row.id,
+        payment_title: payment.title || "無題の支払い",
+        amount_to_pay: Math.floor((payment.total_amount ?? 0) * row.percentage / 100),
+        payer_name: payerNames[payment.user_id] || "不明なユーザー",
+        created_at: payment.created_at,
       };
     });
 
     set({ notifications: notifs });
   },
 
-  // 4. ★承認/拒否アクション
-  respondToRequest: async (id: string, status: string) => {
+  respondToRequest: async (id, response) => {
     const { data, error } = await supabase
       .from('participants')
-      .update({ status: status })
+      .update({ status: response })
       .eq('id', id)
       .select();
 
@@ -216,7 +239,7 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
       return;
     }
 
-    // ✅ 更新が成功（dataが空でない）した場合のみ、フロントのリストから削除
+    // 更新できた場合のみ、再取得せずにリストから取り除く
     if (data && data.length > 0) {
       set((state) => ({
         notifications: state.notifications.filter((n) => n.id !== id)
@@ -224,36 +247,33 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
     }
   },
 
-  // 他の機能 (addFriend, addPaymentなど)
   addFriend: async (targetUsername) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return { success: false, message: "ログインしてください" };
     const { data: targetProfile } = await supabase.from('profiles').select('id, username').eq('username', targetUsername).single();
     if (!targetProfile) return { success: false, message: "ユーザーが見つかりませんでした" };
     if (targetProfile.id === user.id) return { success: false, message: "自分自身は登録できません" };
     const { error } = await supabase.from('friends').insert({ user_id: user.id, friend_id: targetProfile.id });
     if (error) return { success: false, message: "すでに登録済みかエラーです" };
-    get().fetchFriends();
+    await get().fetchFriends();
     return { success: true, message: `${targetUsername} を追加しました！` };
   },
 
   addPayment: async (title, amount, participants, message) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const user = await getCurrentUser();
+    if (!user) return false;
 
-    // 1. 参加者全員のIDを抽出
     const participantIds = participants
       .map(p => p.linked_user_id)
       .filter((id): id is string => !!id);
 
-    // 2. paymentsテーブルに保存
-    // DB側で DEFAULT auth.uid() を設定したので、実は user_id は書かなくても自動で入ります！
+    // user_id はDB側の DEFAULT auth.uid() で入る
     const { data: paymentData, error: paymentError } = await supabase
       .from('payments')
-      .insert([{ 
-        title, 
-        total_amount: amount, 
-        status: 'active', 
+      .insert([{
+        title,
+        total_amount: amount,
+        status: 'active',
         message,
         participant_ids: participantIds
       }])
@@ -262,39 +282,52 @@ export const usePaymentStore = create<PaymentState>((set, get) => ({
 
     if (paymentError || !paymentData) {
       console.error('Payment保存失敗:', paymentError);
-      return;
+      return false;
     }
-
-    // 3. participantsテーブル（子）への保存
-    const participantsToInsert = participants.map((p) => ({
-      payment_id: paymentData.id,
-      name: p.name,
-      percentage: p.percentage,
-      linked_user_id: p.linked_user_id || null,
-      status: p.linked_user_id ? 'pending' : 'approved',
-      // 👇 ここ重要！SQLで追加したのが "user_id" ならここを user_id にします
-      user_id: user.id 
-    }));
 
     const { error: partError } = await supabase
       .from('participants')
-      .insert(participantsToInsert);
+      .insert(participants.map((p) => ({
+        payment_id: paymentData.id,
+        name: p.name,
+        percentage: p.percentage,
+        linked_user_id: p.linked_user_id || null,
+        status: p.linked_user_id ? 'pending' : 'approved',
+        user_id: user.id
+      })));
 
     if (partError) {
       console.error('Participants保存失敗:', partError);
+      // 参加者なしの支払いが残らないように取り消す
+      await supabase.from('payments').delete().eq('id', paymentData.id);
+      return false;
     }
 
-    get().fetchPayments();
+    await get().fetchPayments();
+    return true;
   },
 
-  moveToHistory: async (id) => { await supabase.from('payments').update({ status: 'history', completed_at: new Date().toISOString() }).eq('id', id); get().fetchPayments(); },
-  deletePayment: async (id) => { await supabase.from('payments').delete().eq('id', id); get().fetchPayments(); },
-  deleteHistoryItem: async (id) => { await supabase.from('payments').delete().eq('id', id); get().fetchPayments(); },
-  clearHistory: async () => { await supabase.from('payments').delete().eq('status', 'history'); get().fetchPayments(); },
+  moveToHistory: async (id) => {
+    await supabase.from('payments').update({ status: 'history', completed_at: new Date().toISOString() }).eq('id', id);
+    await get().fetchPayments();
+  },
+
+  deletePayment: async (id) => {
+    await supabase.from('payments').delete().eq('id', id);
+    await get().fetchPayments();
+  },
+
+  clearHistory: async () => {
+    const user = await getCurrentUser();
+    if (!user) return;
+    await supabase.from('payments').delete().eq('user_id', user.id).eq('status', 'history');
+    await get().fetchPayments();
+  },
+
   deleteFriend: async (friend_id) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) return;
     await supabase.from('friends').delete().eq('user_id', user.id).eq('friend_id', friend_id);
-    get().fetchFriends();
+    await get().fetchFriends();
   }
 }));

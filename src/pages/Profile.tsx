@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { BsPersonCircle, BsCopy, BsCheckLg, BsBoxArrowRight, BsPencilSquare, BsLock } from "react-icons/bs";
-import Header from '../components/Header';
-import BottomNav from '../components/BottomNav';
+import PageLayout from '../components/PageLayout';
 import { useNavigate } from 'react-router-dom';
+
+const errorMessage = (err: unknown) =>
+  err instanceof Error ? err.message : String((err as { message?: unknown })?.message ?? err);
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -96,9 +98,9 @@ export default function Profile() {
       await supabase.auth.signOut();
       navigate("/");
 
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      alert("削除に失敗しました: " + err.message);
+      alert("削除に失敗しました: " + errorMessage(err));
     }
   };
 
@@ -148,9 +150,9 @@ export default function Profile() {
       setNewPassword("");
       setTimeout(() => setIsChangingPassword(false), 2000);
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Password update error:", error);
-      setPasswordMessage({ text: "エラーが発生しました: " + error.message, type: 'error' });
+      setPasswordMessage({ text: "エラーが発生しました: " + errorMessage(error), type: 'error' });
     }
   };
 
@@ -164,131 +166,125 @@ export default function Profile() {
   if (loading) return <div className="min-h-screen bg-blue-500" />;
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-sky-400 to-blue-800 pb-24">
-      <div className="max-w-md mx-auto p-4 text-white">
-        <Header />
+    <PageLayout>
+      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl space-y-8">
 
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 shadow-xl animate-fade-in-up space-y-8">
-
-          {/* プロフィール情報セクション */}
-          <div>
-            <div className="flex flex-col items-center mb-6">
-              <div className="bg-white text-blue-500 rounded-full p-4 mb-4 shadow-lg">
-                <BsPersonCircle size={64} />
-              </div>
-
-              {isEditing ? (
-                <div className="flex gap-2 w-full max-w-xs">
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    className="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-1 text-center font-bold focus:outline-none focus:bg-white/30"
-                  />
-                  <button onClick={updateProfile} className="bg-emerald-500 p-2 rounded-lg hover:bg-emerald-600">
-                    <BsCheckLg />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-bold">{profile?.display_name || "ゲスト"}</h2>
-                  <button onClick={() => setIsEditing(true)} className="text-white/60 hover:text-white">
-                    <BsPencilSquare />
-                  </button>
-                </div>
-              )}
-              <p className="text-blue-100 text-sm mt-1">マイプロフィール</p>
+        {/* プロフィール情報セクション */}
+        <div>
+          <div className="flex flex-col items-center mb-6">
+            <div className="bg-white text-blue-500 rounded-full p-4 mb-4 shadow-lg">
+              <BsPersonCircle size={64} />
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-black/20 p-4 rounded-xl border border-white/10">
-                <p className="text-xs text-blue-200 mb-1">あなたのID (友達に教えてね)</p>
-                <div className="flex items-center justify-between">
-                  <code className="text-xl font-mono font-bold tracking-wider">
-                    {profile?.username || "Loading..."}
-                  </code>
-                  <button
-                    onClick={copyToClipboard}
-                    className={`p-2 rounded-lg transition-all flex items-center gap-2 text-sm font-bold ${copied ? 'bg-emerald-500 text-white' : 'bg-white text-blue-600 hover:bg-blue-50'}`}
-                  >
-                    {copied ? <BsCheckLg /> : <BsCopy />}
-                    {copied ? "コピー完了" : "コピー"}
-                  </button>
-                </div>
+            {isEditing ? (
+              <div className="flex gap-2 w-full max-w-xs">
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-1 text-center font-bold focus:outline-none focus:bg-white/30"
+                />
+                <button onClick={updateProfile} className="bg-emerald-500 p-2 rounded-lg hover:bg-emerald-600">
+                  <BsCheckLg />
+                </button>
               </div>
-            </div>
-          </div>
-
-          {/* ★ パスワード変更セクション (新規追加) */}
-          <div className="border-t border-white/10 pt-6">
-            <button
-              onClick={() => setIsChangingPassword(!isChangingPassword)}
-              className="flex items-center gap-2 text-white font-bold mb-4 hover:text-blue-200 transition-colors w-full"
-            >
-              <BsLock className="text-lg" />
-              パスワード変更
-              <span className="ml-auto text-sm opacity-60">{isChangingPassword ? "▲ 閉じる" : "▼ 開く"}</span>
-            </button>
-
-            {isChangingPassword && (
-              <div className="bg-black/20 p-4 rounded-xl space-y-3 animate-fade-in">
-                <div>
-                  <label className="text-xs text-blue-200 block mb-1">現在のパスワード</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
-                    placeholder="セキュリティのため入力してください"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-blue-200 block mb-1">新しいパスワード※大文字小文字、数字を含めてください。</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
-                    placeholder="8文字以上"
-                  />
-                </div>
-
-                {passwordMessage && (
-                  <p className={`text-sm font-bold text-center ${passwordMessage.type === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
-                    {passwordMessage.text}
-                  </p>
-                )}
-
-                <button
-                  onClick={handlePasswordChange}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors mt-2"
-                >
-                  変更する
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold">{profile?.display_name || "ゲスト"}</h2>
+                <button onClick={() => setIsEditing(true)} className="text-white/60 hover:text-white">
+                  <BsPencilSquare />
                 </button>
               </div>
             )}
+            <p className="text-blue-100 text-sm mt-1">マイプロフィール</p>
           </div>
 
-          {/* ログアウトボタン */}
-          <button
-            onClick={handleLogout}
-            className="w-full bg-rose-500/80 hover:bg-rose-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
-          >
-            <BsBoxArrowRight size={20} />
-            ログアウト
-          </button>
-          <div className="mt-8 text-center border-t border-white/10 pt-6">
-            <button
-              onClick={handleDeleteAccount}
-              className="text-rose-400 text-sm hover:text-rose-200 underline decoration-rose-400/50 hover:decoration-rose-200 transition-all"
-            >
-              アカウントを完全に削除する
-            </button>
+          <div className="space-y-4">
+            <div className="bg-black/20 p-4 rounded-xl border border-white/10">
+              <p className="text-xs text-blue-200 mb-1">あなたのID (友達に教えてね)</p>
+              <div className="flex items-center justify-between">
+                <code className="text-xl font-mono font-bold tracking-wider">
+                  {profile?.username || "Loading..."}
+                </code>
+                <button
+                  onClick={copyToClipboard}
+                  className={`p-2 rounded-lg transition-all flex items-center gap-2 text-sm font-bold ${copied ? 'bg-emerald-500 text-white' : 'bg-white text-blue-600 hover:bg-blue-50'}`}
+                >
+                  {copied ? <BsCheckLg /> : <BsCopy />}
+                  {copied ? "コピー完了" : "コピー"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <BottomNav />
+        {/* ★ パスワード変更セクション (新規追加) */}
+        <div className="border-t border-white/10 pt-6">
+          <button
+            onClick={() => setIsChangingPassword(!isChangingPassword)}
+            className="flex items-center gap-2 text-white font-bold mb-4 hover:text-blue-200 transition-colors w-full"
+          >
+            <BsLock className="text-lg" />
+            パスワード変更
+            <span className="ml-auto text-sm opacity-60">{isChangingPassword ? "▲ 閉じる" : "▼ 開く"}</span>
+          </button>
+
+          {isChangingPassword && (
+            <div className="bg-black/20 p-4 rounded-xl space-y-3">
+              <div>
+                <label className="text-xs text-blue-200 block mb-1">現在のパスワード</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
+                  placeholder="セキュリティのため入力してください"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-blue-200 block mb-1">新しいパスワード※大文字小文字、数字を含めてください。</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400"
+                  placeholder="8文字以上"
+                />
+              </div>
+
+              {passwordMessage && (
+                <p className={`text-sm font-bold text-center ${passwordMessage.type === 'error' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  {passwordMessage.text}
+                </p>
+              )}
+
+              <button
+                onClick={handlePasswordChange}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-colors mt-2"
+              >
+                変更する
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ログアウトボタン */}
+        <button
+          onClick={handleLogout}
+          className="w-full bg-rose-500/80 hover:bg-rose-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors"
+        >
+          <BsBoxArrowRight size={20} />
+          ログアウト
+        </button>
+        <div className="mt-8 text-center border-t border-white/10 pt-6">
+          <button
+            onClick={handleDeleteAccount}
+            className="text-rose-400 text-sm hover:text-rose-200 underline decoration-rose-400/50 hover:decoration-rose-200 transition-all"
+          >
+            アカウントを完全に削除する
+          </button>
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

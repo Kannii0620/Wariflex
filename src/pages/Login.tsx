@@ -6,7 +6,7 @@ import logo from '../components/WariFlex_Logo.png';
 export default function Login() {
   return (
     <div className="min-h-screen bg-linear-to-b from-sky-400 to-blue-800 flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/20 animate-fade-in-up">
+      <div className="bg-white/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/20">
         
         {/* ロゴエリア */}
         <div className="flex flex-col items-center mb-6">
